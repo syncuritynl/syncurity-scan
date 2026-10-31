@@ -232,9 +232,9 @@ type vraagPagina struct {
 }
 
 type rapportPagina struct {
-	Titel, Beschrijving, Domein, Wanneer, Sub, PDF string
-	Rest                                           int
-	U                                              *keuring.Uitslag
+	Titel, Beschrijving, Domein, Wanneer, Sub, PDF, Versie string
+	Rest                                                   int
+	U                                                      *keuring.Uitslag
 }
 
 func kopregels(w http.ResponseWriter) {
@@ -434,8 +434,22 @@ func (d *dienst) rapport(w http.ResponseWriter, r *http.Request) {
 		Rest:         rest,
 		U:            u,
 		PDF:          pdfAdres(u.Domein, r.URL.Query().Get("invoer")),
+		Versie:       openbareVersie(),
 	})
 }
+
+// openbareVersie is de commit waarmee deze dienst gebouwd is, als die op
+// GitHub te vinden is (een schone build, zie bouw.sh). Onder elk rapport staat
+// een link naar precies die code; met dezelfde commit bouwt iedereen hetzelfde
+// programma na. Een build met niet vastgelegd werk ("-dirty") krijgt geen link.
+func openbareVersie() string {
+	if commitVorm.MatchString(versie) {
+		return versie
+	}
+	return ""
+}
+
+var commitVorm = regexp.MustCompile(`^[0-9a-f]{7,40}$`)
 
 // pdfAdres is de link achter de downloadknop; een ingevuld subdomein gaat mee,
 // zodat de pdf dezelfde opmerking heeft als de pagina.

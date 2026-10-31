@@ -110,3 +110,25 @@ func TestPDFVoorbeeld(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Onder het rapport staat de versie met een link naar de code, maar alleen
+// bij een schone build.
+func TestVersieOnderRapport(t *testing.T) {
+	oud := versie
+	defer func() { versie = oud }()
+	d := nieuweDienst(keuring.Instellingen{})
+	u := voorbeeldUitslag()
+	d.uitslag[u.Domein] = bewaard{u: u, tot: time.Now().Add(time.Minute)}
+	for _, tc := range []struct {
+		versie string
+		link   bool
+	}{{"15a2f51", true}, {"15a2f51-dirty", false}, {"onbekend", false}} {
+		versie = tc.versie
+		rec := httptest.NewRecorder()
+		d.routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/scan/voorbeeld.nl", nil))
+		heeft := bytes.Contains(rec.Body.Bytes(), []byte(`href="https://github.com/syncuritynl/syncurity-scan/tree/`+tc.versie+`"`))
+		if heeft != tc.link {
+			t.Errorf("versie %q: link %v, verwacht %v", tc.versie, heeft, tc.link)
+		}
+	}
+}

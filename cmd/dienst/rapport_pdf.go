@@ -123,7 +123,11 @@ func maakPDF(u *keuring.Uitslag, sub string) []byte {
 	for i := range n {
 		r.d.OpPagina(i)
 		r.d.Lijn(rand, pdf.A4Hoog-44, pdf.A4Breed-rand, pdf.A4Hoog-44, 0.5, kLijn)
-		r.d.Tekst(rand, pdf.A4Hoog-30, pdf.Gewoon, 8, kGedempt, "Scan van "+r.domein+" · "+r.wanneer)
+		voet := "Scan van " + r.domein + " · " + r.wanneer
+		if v := openbareVersie(); v != "" {
+			voet += " · versie " + v
+		}
+		r.d.Tekst(rand, pdf.A4Hoog-30, pdf.Gewoon, 8, kGedempt, voet)
 		r.d.TekstRechts(pdf.A4Breed-rand, pdf.A4Hoog-30, pdf.Gewoon, 8, kGedempt, fmt.Sprintf("Pagina %d van %d", i+1, n))
 	}
 	return r.d.Bytes()
