@@ -1,0 +1,73 @@
+{{define "rapport"}}{{template "begin-rapport" .}}
+<main id="boven">
+  <section class="binnen r-kop">
+    <p class="kopje">Scan van {{.Wanneer}}</p>
+    <h1>{{.Domein}}</h1>
+    <div class="uitslag">
+      <svg class="ring" viewBox="0 0 148 148" role="img" aria-label="{{.U.InOrde}} van de {{.U.Totaal}} punten in orde">
+        <circle class="ring-baan" cx="74" cy="74" r="64"/>
+        <circle class="ring-stand" cx="74" cy="74" r="64" stroke-dasharray="402" stroke-dashoffset="{{.Rest}}"/>
+        <text class="ring-getal" x="74" y="80" text-anchor="middle" font-size="34">{{.U.InOrde}}/{{.U.Totaal}}</text>
+        <text class="ring-sub" x="74" y="102" text-anchor="middle" font-size="13">in orde</text>
+      </svg>
+      <div class="delen">
+        {{range .U.Groepen}}<a class="deel" href="#g-{{.ID}}"><span>{{.Kort}}</span><b>{{.InOrde}} / {{.Totaal}}</b></a>
+        {{end}}
+      </div>
+    </div>
+    {{if .Sub}}<p class="bewaar">Je vulde {{.Sub}} in. De scan gaat over de hele domeinnaam {{.Domein}}.</p>{{end}}
+    <p class="bewaar">Deze uitslag blijft 15 minuten op dit adres staan. Bewaar hem als pdf met de knop bovenaan.</p>
+    {{if .U.Melding}}<p class="melding-scan" role="status">{{.U.Melding}}</p>{{end}}
+    {{if .U.Feiten}}
+    <dl class="feiten" aria-label="Wat we over je domein zagen">
+      {{range .U.Feiten}}<div class="feit"><dt>{{.Naam}}</dt><dd>{{.Waarde}}</dd></div>
+      {{end}}
+    </dl>
+    {{end}}
+  </section>
+
+  {{if .U.Eerst}}
+  <section class="binnen eerst" aria-labelledby="eerst-kop">
+    <h2 id="eerst-kop">Eerst aanpakken</h2>
+    <ol class="eerst-lijst">
+      {{range .U.Eerst}}<li><a href="#p-{{.ID}}"><span class="stip {{.Status}}" aria-hidden="true"></span><span><b>{{.Titel}}</b><span class="eerst-uitleg">{{.Uitleg}}</span></span></a></li>
+      {{end}}
+    </ol>
+  </section>
+  {{end}}
+
+  <section class="binnen onderdelen" aria-label="Uitslag per onderdeel">
+    <nav class="inhoud" aria-label="Onderdelen van het rapport">
+      <ol>
+        {{range .U.Groepen}}<li><a href="#g-{{.ID}}"><span class="inhoud-vast" data-vet="{{.Kort}}">{{.Kort}}</span><span class="inhoud-vast inhoud-getal" data-vet="{{.InOrde}}/{{.Totaal}}">{{.InOrde}}/{{.Totaal}}</span></a></li>
+        {{end}}
+      </ol>
+    </nav>
+    {{range .U.Groepen}}
+    <div class="groep" id="g-{{.ID}}">
+      <div><h2>{{.Naam}}</h2><p class="samen">{{.Samen}}</p><p class="samen-getal">{{.InOrde}} van {{.Totaal}} in orde</p></div>
+      <ul class="punten">
+        {{range .Punten}}
+        <li class="punt" id="p-{{.ID}}"><span class="stip {{.Status}}" aria-hidden="true"></span><div><h3>{{.Titel}}</h3><p>{{.Uitleg}}</p>{{if .Gezien}}<p class="gezien">{{.Gezien}}</p>{{end}}<p class="techniek-klein">{{.Techniek}}{{if .Meer}} · <a href="{{.Meer}}">Lees de uitleg<span class="verborgen"> over {{.Titel}}</span></a>{{end}}</p></div><span class="oordeel {{.Status}}">{{.Oordeel}}</span></li>
+        {{end}}
+      </ul>
+    </div>
+    {{end}}
+  </section>
+
+  <section class="ontgrendel" aria-labelledby="ontgrendel-kop">
+    <div class="binnen ontgrendel-in">
+      <svg class="ontgrendel-icoon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><rect x="9" y="21" width="30" height="22" rx="4"/><path d="M15 21v-6a9 9 0 0 1 18 0v6"/><path d="M24 30v5"/></svg>
+      <h2 id="ontgrendel-kop">Ontgrendel de rest</h2>
+      <p>Log in en verifieer je domeinnaam. Dan zie je het volledige rapport.</p>
+      <a class="knop-wit" href="/aanmelden?domein={{.Domein}}">Ontgrendel het rapport</a>
+      <p class="ontgrendel-los">Al een account? <a href="/login">Log in</a></p>
+    </div>
+  </section>
+
+  <section class="binnen smal opnieuw" aria-labelledby="opnieuw-kop">
+    <h2 id="opnieuw-kop">Nog een domeinnaam scannen?</h2>
+    {{template "formulier" ""}}
+  </section>
+</main>
+{{template "eind" .}}{{end}}

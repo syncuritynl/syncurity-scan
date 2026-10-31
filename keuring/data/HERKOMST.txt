@@ -1,0 +1,8 @@
+retire.json komt uit RetireJS (https://github.com/RetireJS/retire.js), bestand
+repository/jsrepository.json, onder de Apache License 2.0 (kopie in
+LICENSE-retirejs). Gewijzigd: ingekort tot de bibliotheken en patronen die aan
+een bestandsnaam of adres te herkennen zijn, en omgezet naar een eigen vorm.
+
+wordpress.json komt uit api.wordpress.org/core/stable-check (open data).
+
+Bijwerken: ./data-bijwerken.sh in de hoofdmap, daarna opnieuw bouwen.

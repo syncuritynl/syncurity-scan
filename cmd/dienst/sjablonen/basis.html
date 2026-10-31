@@ -1,0 +1,73 @@
+{{define "head"}}<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{.Titel}}</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="{{.Beschrijving}}">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preload" href="/assets/letters/bricolage-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/letters/fraunces-cursief-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/stijl.css?v=2026-10-30">
+<link rel="manifest" href="/manifest.webmanifest">
+<script src="/assets/app.js" defer></script>
+<script src="/assets/scan.js" defer></script>
+</head>
+{{end}}
+
+{{define "begin"}}{{template "head" .}}
+<body class="site">
+<header class="kop">
+  <div class="kop-in">
+    <a class="merk" href="/"><img class="merk-icoon" src="/assets/icoon.svg" width="30" height="44" alt="Syncurity, naar de homepage"></a>
+  </div>
+</header>
+{{end}}
+
+{{/* Kop van het rapport: rechts downloaden als pdf en terug naar boven.
+   Uitleg en Over staan alleen op de homepage. */}}
+{{define "begin-rapport"}}{{template "head" .}}
+<body class="site rapport">
+<header class="kop">
+  <div class="kop-in">
+    <a class="merk" href="/"><img class="merk-icoon" src="/assets/icoon.svg" width="30" height="44" alt="Syncurity, naar de homepage"></a>
+    <div class="kop-knoppen">
+      <a class="kop-icoon" href="{{.PDF}}" download aria-label="Rapport downloaden als pdf"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v15M6 13l6 6 6-6"/></svg></a>
+      <a class="kop-icoon" href="#boven" aria-label="Terug naar boven"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 3.5h14M12 21V8M6 14l6-6 6 6"/></svg></a>
+    </div>
+  </div>
+</header>
+{{end}}
+
+{{define "eind"}}
+<footer class="voet">
+  <div class="binnen voet-in">
+    <p>&copy; 2026 Syncurity · gemaakt door Wilvert Blaauwendraad</p>
+    <nav class="voet-nav" aria-label="Over deze site"><a href="/privacy/">Privacy</a><a href="/voorwaarden/">Voorwaarden</a><a href="mailto:info@syncurity.nl">info@syncurity.nl</a></nav>
+  </div>
+</footer>
+</body>
+</html>
+{{end}}
+
+{{define "formulier"}}
+<form class="zoek" method="post" action="/scan">
+  <label class="verborgen" for="domein">Je domeinnaam</label>
+  <span class="zoek-voor" aria-hidden="true">https://</span>
+  <input class="zoek-veld" id="domein" name="domein" type="text" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" maxlength="255" placeholder="jouwwebsite.nl" value="{{.}}" required>
+  <button class="zoek-knop" type="submit">Start de scan</button>
+</form>
+{{end}}
+
+{{/* Hetzelfde formulier, met het veld gekoppeld aan de foutmelding (WCAG 3.3.1). */}}
+{{define "formulier-fout"}}
+<form class="zoek" method="post" action="/scan">
+  <label class="verborgen" for="domein">Je domeinnaam</label>
+  <span class="zoek-voor" aria-hidden="true">https://</span>
+  <input class="zoek-veld" id="domein" name="domein" type="text" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" maxlength="255" placeholder="jouwwebsite.nl" value="{{.}}" required aria-invalid="true" aria-describedby="domein-fout">
+  <button class="zoek-knop" type="submit">Start de scan</button>
+</form>
+{{end}}

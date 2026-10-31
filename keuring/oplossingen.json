@@ -1,0 +1,1316 @@
+{
+  "dmarc": {
+    "slecht": {
+      "wie": "wie je domeinnaam beheert",
+      "stappen": [
+        "Laat wie je e-mail beheert eerst nagaan welke diensten namens jou mailen, zodat je eigen mail straks niet wordt geweigerd.",
+        "Open de DNS-instellingen van je domeinnaam bij je DNS-leverancier.",
+        "Staan er al DMARC-records op _dmarc, verwijder die dan, zodat er straks precies één is.",
+        "Zet het voorstel hieronder als TXT-record (een DNS-record met gewone tekst) op _dmarc."
+      ],
+      "varianten": {
+        "TransIP": [
+          "Laat wie je e-mail beheert eerst nagaan welke diensten namens jou mailen, zodat je eigen mail straks niet wordt geweigerd.",
+          "Ga in het controlepaneel van TransIP naar Domein, klik op je domeinnaam en zoek het kopje DNS.",
+          "Verwijder oude DMARC-records met de naam _dmarc, zodat er straks precies één is.",
+          "Voeg een TXT-record toe met de naam _dmarc en het voorstel hieronder als waarde."
+        ],
+        "Cloudflare": [
+          "Laat wie je e-mail beheert eerst nagaan welke diensten namens jou mailen, zodat je eigen mail straks niet wordt geweigerd.",
+          "Ga in het dashboard van Cloudflare naar DNS > Records.",
+          "Verwijder oude DMARC-records met de naam _dmarc, zodat er straks precies één is.",
+          "Klik op Add record, kies het type TXT met de naam _dmarc en plak het voorstel hieronder als inhoud."
+        ]
+      }
+    },
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Kijk in de DMARC-rapporten welke diensten namens jouw domeinnaam mailen, zoals je nieuwsbrief of je boekhoudpakket.",
+        "Zorg dat elke dienst die echt van jou is, SPF of DKIM haalt voor jouw domeinnaam.",
+        "Vervang daarna je DMARC-record door het voorstel hieronder."
+      ]
+    }
+  },
+  "dmarc-rua": {
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Kies een mailadres waar de rapporten heen mogen, het liefst een apart adres.",
+        "Controleer het adres in het voorstel hieronder en vervang daarmee je DMARC-record.",
+        "De rapporten zijn bestanden voor computers; laat je beheerder of een DMARC-dienst ze voor je lezen."
+      ]
+    }
+  },
+  "spf": {
+    "slecht": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Maak een lijst van alle diensten die namens jou mailen, zoals je mailleverancier, je nieuwsbrief en je factuurprogramma.",
+        "Controleer of elke dienst uit die lijst in het voorstel hieronder staat; mail je niet met deze domeinnaam, dan is het voorstel zo al goed.",
+        "Zet het voorstel als TXT-record (een DNS-record met gewone tekst) op je domeinnaam zelf, in plaats van je huidige SPF-record.",
+        "Laat daarna precies één SPF-record staan, want twee records maken ze allebei ongeldig."
+      ]
+    },
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Controleer of alle diensten die namens jou mailen in je SPF-record staan.",
+        "Vervang je SPF-record door het voorstel hieronder.",
+        "Zet ook je DMARC-record op quarantine of reject, dan wordt mail van andere servers echt tegengehouden."
+      ]
+    }
+  },
+  "spf-lookups": {
+    "slecht": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Haal diensten uit je SPF-record die je niet meer gebruikt.",
+        "Laat een nieuwsbrief- of factuurdienst mailen vanaf een subdomein (een naam onder je domeinnaam, zoals nieuws.), met een eigen SPF-record.",
+        "Scan daarna opnieuw en controleer dat je op tien of minder opzoekingen uitkomt."
+      ]
+    },
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Haal diensten uit je SPF-record die je niet meer gebruikt, zodat er ruimte overblijft.",
+        "Komt er een nieuwe dienst bij, laat die dan mailen vanaf een subdomein (een naam onder je domeinnaam, zoals nieuws.) met een eigen SPF-record."
+      ]
+    }
+  },
+  "dkim": {
+    "slecht": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Laat je mailleverancier een nieuwe DKIM-sleutel van 2048 bits maken.",
+        "Zet het DNS-record dat je daarbij krijgt in de DNS van je domeinnaam.",
+        "Haal het oude record pas weg als je mail met de nieuwe sleutel wordt ondertekend."
+      ],
+      "varianten": {
+        "Microsoft 365": [
+          "Laat je beheerder in Exchange Online PowerShell de sleutel vernieuwen met Rotate-DkimSigningConfig en -KeySize 2048.",
+          "Je hoeft daarvoor niets aan je DNS te veranderen, want de twee CNAME-records blijven hetzelfde."
+        ],
+        "Google Workspace": [
+          "Ga in de Google Admin-console naar Apps > Google Workspace > Gmail en open Authenticate email.",
+          "Kies je domeinnaam, klik op Generate New Record en kies 2048 bits.",
+          "Zet het TXT-record dat je krijgt in de DNS van je domeinnaam, in plaats van het oude.",
+          "Klik daarna op Start authentication."
+        ]
+      }
+    },
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Vraag je mailleverancier of DKIM aanstaat voor jouw domeinnaam, en onder welke naam (selector) de sleutel staat.",
+        "Staat DKIM uit, zet het dan aan en zet de DNS-records die je krijgt in de DNS van je domeinnaam.",
+        "Is de sleutel korter dan 2048 bits, laat dan een nieuwe sleutel van 2048 bits maken.",
+        "Mailen er ook andere diensten namens jou, zoals een nieuwsbrief, zet DKIM daar dan ook aan."
+      ],
+      "varianten": {
+        "Microsoft 365": [
+          "Open in Microsoft Defender de pagina security.microsoft.com/authentication en kies het tabblad DKIM.",
+          "Staat DKIM voor je domeinnaam uit, klik dan op de domeinnaam en zet de twee CNAME-records (doorverwijzingen) die je daar ziet in je DNS.",
+          "Zet daarna Sign messages for this domain with DKIM signatures aan.",
+          "Staat DKIM al aan maar is de sleutel te kort, laat je beheerder dan in PowerShell Rotate-DkimSigningConfig met -KeySize 2048 uitvoeren."
+        ],
+        "Google Workspace": [
+          "Ga in de Google Admin-console naar Apps > Google Workspace > Gmail en open Authenticate email.",
+          "Kies je domeinnaam, klik op Generate New Record en kies 2048 bits.",
+          "Zet het TXT-record dat je krijgt in de DNS van je domeinnaam.",
+          "Klik daarna op Start authentication."
+        ]
+      }
+    }
+  },
+  "mta-sts": {
+    "slecht": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Open https://mta-sts. gevolgd door je domeinnaam en /.well-known/mta-sts.txt in je browser, en kijk of het bestand zonder waarschuwing opent.",
+        "Zet het bestand terug of herstel het certificaat van het subdomein mta-sts.",
+        "Lukt dat niet snel, haal dan het TXT-record op _mta-sts weg tot het bestand weer werkt."
+      ]
+    },
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Zet het bestand uit het voorstel hieronder op het subdomein mta-sts van je domeinnaam, op het pad /.well-known/mta-sts.txt, met een geldig certificaat.",
+        "Zet het TXT-record uit het voorstel op _mta-sts bij je domeinnaam.",
+        "Begin met mode: testing, en zet het op mode: enforce zodra de meldingen van TLS-RPT een paar weken schoon zijn.",
+        "Verander je het bestand, verander dan ook het id in het TXT-record, anders zien mailservers de wijziging niet."
+      ]
+    }
+  },
+  "tls-rpt": {
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Kies een mailadres voor de meldingen, het liefst een apart adres.",
+        "Zet het voorstel hieronder als TXT-record op _smtp._tls bij je domeinnaam, met dat adres erin.",
+        "De meldingen zijn bestanden voor computers; laat je beheerder of een rapportagedienst ze voor je bijhouden."
+      ]
+    }
+  },
+  "dane": {
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Zorg eerst dat DNSSEC aanstaat voor je domeinnaam.",
+        "Wijzen je MX-records (de DNS-records die zeggen waar je mail heen moet) naar servers van je mailleverancier, vraag die dan of ze DANE ondersteunen.",
+        "Beheer je de mailserver zelf, zet dan voor elke mailserver een TLSA-record (de sleutel van de mailserver in de DNS).",
+        "Heb je meer mailservers, zorg dan dat ze het allemaal hebben."
+      ],
+      "varianten": {
+        "Microsoft 365": [
+          "Zorg eerst dat DNSSEC aanstaat voor je domeinnaam.",
+          "Laat je beheerder in Exchange Online PowerShell Enable-DnssecForVerifiedDomain uitvoeren, en zet het nieuwe MX-record dat eindigt op mx.microsoft in je DNS, met prioriteit 0.",
+          "Laat daarna het oude MX-record op mail.protection.outlook.com weghalen.",
+          "Laat je beheerder tot slot Enable-SmtpDaneInbound uitvoeren."
+        ]
+      }
+    }
+  },
+  "dnssec": {
+    "slecht": {
+      "wie": "wie je domeinnaam beheert",
+      "stappen": [
+        "Vraag je DNS-leverancier om DNSSEC aan te zetten; bij de meeste Nederlandse leveranciers is dat één knop.",
+        "Staat je DNS ergens anders dan je registratie, zet dan het DS-record (de sleutel van DNSSEC) van je DNS-leverancier bij je registrar, de partij waar je je domeinnaam hebt geregistreerd.",
+        "Staat DNSSEC al aan maar is het kapot, laat het dan meteen herstellen, want dan is je domeinnaam voor veel bezoekers onbereikbaar."
+      ],
+      "varianten": {
+        "TransIP": [
+          "Bij de nameservers van TransIP zet TransIP DNSSEC zelf aan.",
+          "Staat het toch uit of is het kapot, vraag TransIP dan waarom."
+        ],
+        "Cloudflare": [
+          "Ga in het dashboard van Cloudflare naar DNS > Settings en klik bij DNSSEC op Enable DNSSEC.",
+          "Neem de gegevens van het DS-record over die Cloudflare laat zien.",
+          "Zet dat DS-record bij je registrar, de partij waar je je domeinnaam hebt geregistreerd; is dat Cloudflare zelf, dan gebeurt het vanzelf."
+        ],
+        "Squarespace": [
+          "Open in Squarespace je overzicht van domeinen en klik op je domeinnaam.",
+          "Klik op DNS en dan op DNSSEC, en zet DNS Security Extensions aan."
+        ]
+      }
+    },
+    "matig": {
+      "wie": "wie je domeinnaam beheert",
+      "stappen": [
+        "Vraag je DNS-leverancier of DNSSEC voor je domeinnaam echt aanstaat.",
+        "Laat het DS-record bij je registrar (de partij waar je je domeinnaam hebt geregistreerd) gelijkmaken aan de sleutels van je DNS-leverancier.",
+        "Gebruik je geen DNSSEC meer, laat het DS-record dan weghalen."
+      ]
+    }
+  },
+  "dnssec-alg": {
+    "matig": {
+      "wie": "wie je domeinnaam beheert",
+      "stappen": [
+        "Vraag je DNS-leverancier om over te stappen op een moderne methode, zoals ECDSA (algoritme 13).",
+        "Zorg dat daarbij ook het DS-record bij je registrar (de partij waar je je domeinnaam hebt geregistreerd) wordt vervangen, anders werkt je domeinnaam niet meer."
+      ]
+    }
+  },
+  "caa": {
+    "matig": {
+      "wie": "wie je domeinnaam beheert",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij welke leverancier je certificaat uitgeeft.",
+        "Zet het voorstel hieronder als CAA-record bij je domeinnaam.",
+        "Gebruik je meer dan één leverancier, bijvoorbeeld via je hostingpartij of een CDN, zet die er dan allemaal bij, anders krijg je straks geen nieuw certificaat."
+      ]
+    }
+  },
+  "ns": {
+    "slecht": {
+      "wie": "wie je domeinnaam beheert",
+      "stappen": [
+        "Vraag je DNS-leverancier om minstens een tweede nameserver, in een ander netwerk.",
+        "Zet alle nameservers daarna bij je registrar, de partij waar je je domeinnaam hebt geregistreerd.",
+        "Draai je je eigen nameserver, zet dan een tweede op een andere plek of stap over naar een DNS-leverancier."
+      ]
+    },
+    "matig": {
+      "wie": "wie je domeinnaam beheert",
+      "stappen": [
+        "Vraag je DNS-leverancier of de nameservers in verschillende netwerken en op verschillende plekken staan.",
+        "Is dat niet zo, vraag dan om een nameserver in een ander netwerk, of stap over naar een leverancier die dat wel heeft."
+      ]
+    }
+  },
+  "tls-modern": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om https aan te zetten met een certificaat, bijvoorbeeld een gratis certificaat van Let's Encrypt.",
+        "Laat daarna alle bezoekers van http:// doorsturen naar https://.",
+        "Open je site met https:// en controleer dat je geen waarschuwing krijgt."
+      ]
+    },
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om TLS 1.3 aan te zetten op je webserver.",
+        "Bij nginx gaat dat met de regel ssl_protocols TLSv1.2 TLSv1.3, en bij Apache met SSLProtocol -all +TLSv1.2 +TLSv1.3.",
+        "Kan je hostingpakket geen TLS 1.3, vraag dan om een nieuwer pakket of een nieuwere server."
+      ],
+      "varianten": {
+        "Cloudflare": [
+          "Loopt je website via Cloudflare, ga dan naar SSL/TLS > Edge Certificates en zet TLS 1.3 aan.",
+          "Loopt je website niet via Cloudflare, dan moet je webbouwer of hostingpartij het op de webserver zelf aanzetten."
+        ]
+      }
+    }
+  },
+  "tls-oud": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om TLS 1.0 en 1.1 uit te zetten, zodat alleen TLS 1.2 en 1.3 overblijven.",
+        "Bij nginx gaat dat met de regel ssl_protocols TLSv1.2 TLSv1.3, en bij Apache met SSLProtocol -all +TLSv1.2 +TLSv1.3.",
+        "Scan daarna opnieuw en controleer dat de oude versies weg zijn."
+      ],
+      "varianten": {
+        "Cloudflare": [
+          "Loopt je website via Cloudflare, ga dan naar SSL/TLS > Edge Certificates en zet Minimum TLS Version op TLS 1.2.",
+          "Loopt je website niet via Cloudflare, dan moet je webbouwer of hostingpartij het op de webserver zelf doen."
+        ]
+      }
+    }
+  },
+  "cipher-zwak": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om RC4 en 3DES uit te zetten op de webserver.",
+        "Laat alleen moderne methoden over, bijvoorbeeld met de instelling Intermediate van de Mozilla SSL Configuration Generator (ssl-config.mozilla.org).",
+        "Scan daarna opnieuw en controleer dat de zwakke methoden weg zijn."
+      ]
+    },
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om de verouderde methoden, met CBC of zonder forward secrecy, uit te zetten.",
+        "Gebruik daarvoor bijvoorbeeld de instelling Intermediate van de Mozilla SSL Configuration Generator (ssl-config.mozilla.org)."
+      ]
+    }
+  },
+  "cert": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om een nieuw, geldig certificaat voor precies de naam van je website, bijvoorbeeld een gratis certificaat van Let's Encrypt.",
+        "Laat het certificaat automatisch vernieuwen, zodat het niet meer kan verlopen.",
+        "Laat de webserver ook de tussencertificaten meesturen, anders vertrouwen sommige browsers het niet.",
+        "Open je site daarna in een browser en controleer dat er geen waarschuwing meer komt."
+      ]
+    },
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om het certificaat nu te vernieuwen.",
+        "Vraag ook of het automatisch wordt vernieuwd, en laat dat anders instellen."
+      ]
+    }
+  },
+  "cert-sleutel": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om een nieuw certificaat met een sleutel van minstens 2048 bits (RSA) of 256 bits (ECDSA), modern ondertekend.",
+        "Een gratis certificaat van Let's Encrypt voldoet daar al aan."
+      ]
+    }
+  },
+  "https": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer om alle bezoekers van http:// met een permanente doorverwijzing (301) naar https:// te sturen.",
+        "Laat de doorverwijzing naar dezelfde naam gaan, dus niet meteen naar een andere naam."
+      ],
+      "varianten": {
+        "Cloudflare": [
+          "Loopt je website via Cloudflare, ga dan naar SSL/TLS > Edge Certificates en zet Always Use HTTPS aan.",
+          "Loopt je website niet via Cloudflare, laat je webbouwer de doorverwijzing dan op de webserver instellen."
+        ],
+        "Squarespace": [
+          "Open in Squarespace het SSL-paneel in de instellingen.",
+          "Kies bij Security preference de optie Secure en sla op."
+        ]
+      }
+    },
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat http:// eerst doorsturen naar https:// op dezelfde naam, en pas daarna naar een andere naam, bijvoorbeeld van of naar www.",
+        "Laat je webbouwer daarna HSTS op die eigen naam zetten, zodat de browser het onthoudt."
+      ]
+    }
+  },
+  "hsts": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zorg eerst dat http:// altijd doorstuurt naar https:// op dezelfde naam.",
+        "Laat je webbouwer of hostingpartij de header uit het voorstel hieronder toevoegen aan elk antwoord van je website.",
+        "Controleer dat de header ook op je domeinnaam zelf staat, niet alleen op www."
+      ],
+      "varianten": {
+        "Cloudflare": [
+          "Loopt je website via Cloudflare, ga dan naar SSL/TLS > Edge Certificates en kies bij HTTP Strict Transport Security (HSTS) voor Enable HSTS.",
+          "Kies als max-age 12 maanden, en zet de optie voor subdomeinen alleen aan als al je subdomeinen https hebben."
+        ],
+        "Squarespace": [
+          "Open in Squarespace het SSL-paneel in de instellingen.",
+          "Kies bij Security preference de opties Secure en HSTS Secure, en sla op."
+        ],
+        "WordPress": [
+          "Laat je hostingpartij de header uit het voorstel hieronder toevoegen, of doe het met een beveiligingsplugin die headers kan instellen.",
+          "Open daarna je site en het beheer van WordPress, en controleer of alles nog werkt."
+        ]
+      }
+    },
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer of hostingpartij de header aanpassen naar het voorstel hieronder, met een max-age van een jaar.",
+        "Zet includeSubDomains er alleen bij als al je subdomeinen https hebben."
+      ],
+      "varianten": {
+        "Cloudflare": [
+          "Loopt je website via Cloudflare, ga dan naar SSL/TLS > Edge Certificates en open de instelling voor HTTP Strict Transport Security (HSTS).",
+          "Kies als max-age 12 maanden, en zet de optie voor subdomeinen alleen aan als al je subdomeinen https hebben."
+        ]
+      }
+    }
+  },
+  "csp": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer het voorstel hieronder eerst instellen als Content-Security-Policy-Report-Only: dan meldt de browser wat hij zou tegenhouden, zonder het echt te doen.",
+        "Pas het beleid aan tot er geen meldingen meer zijn over onderdelen die je nodig hebt.",
+        "Zet het daarna om naar een echte Content-Security-Policy, zonder 'unsafe-inline' en 'unsafe-eval' voor scripts.",
+        "Heb je al een beleid, haal dan de ruime onderdelen weg die de scan noemt, zoals 'unsafe-inline' of *."
+      ],
+      "varianten": {
+        "Wix": [
+          "Bij Wix kun je deze header niet zelf toevoegen; dat kan alleen met de enterprise-oplossing van Wix Studio.",
+          "Wil je hem toch, laat Wix dan via hun supportpagina weten dat je deze functie wilt."
+        ]
+      }
+    }
+  },
+  "nosniff": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer of hostingpartij de header uit het voorstel hieronder toevoegen aan elk antwoord van je website.",
+        "Controleer daarna of je site nog goed laadt."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Laat je hostingpartij de header uit het voorstel hieronder toevoegen, of doe het met een beveiligingsplugin die headers kan instellen.",
+          "Open daarna je site en het beheer van WordPress, en controleer of alles nog werkt."
+        ]
+      }
+    }
+  },
+  "frame": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer de instelling uit het voorstel hieronder toevoegen: frame-ancestors in je Content-Security-Policy, of de header X-Frame-Options.",
+        "Moet je site wel ergens ingebed worden, bijvoorbeeld bij een partner, zet die site dan als enige uitzondering in frame-ancestors."
+      ],
+      "varianten": {
+        "Wix": [
+          "Bij Wix kun je deze header niet zelf toevoegen; dat kan alleen met de enterprise-oplossing van Wix Studio.",
+          "Wil je hem toch, laat Wix dan via hun supportpagina weten dat je deze functie wilt."
+        ],
+        "WordPress": [
+          "Laat je hostingpartij de header uit het voorstel hieronder toevoegen, of doe het met een beveiligingsplugin die headers kan instellen.",
+          "Open daarna je site en het beheer van WordPress, en controleer of alles nog werkt."
+        ]
+      }
+    }
+  },
+  "referrer": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer de header uit het voorstel hieronder toevoegen, of de bestaande ermee vervangen.",
+        "Zet hem op elk antwoord van je website, niet alleen op de homepage."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Laat je hostingpartij de header uit het voorstel hieronder toevoegen, of doe het met een beveiligingsplugin die headers kan instellen.",
+          "Open daarna je site en het beheer van WordPress, en controleer of alles nog werkt."
+        ]
+      }
+    }
+  },
+  "cookies": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer bij elke cookie het kenmerk Secure zetten, zodat die alleen over https meereist.",
+        "Laat daarbij ook SameSite=Lax zetten, of SameSite=Strict als dat kan.",
+        "Komt een cookie van een plugin of een andere dienst, kijk dan in de instellingen daarvan of werk die bij."
+      ]
+    },
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer bij elke cookie SameSite=Lax zetten, of SameSite=Strict als dat kan.",
+        "Komt een cookie van een plugin of een andere dienst, kijk dan of er een nieuwere versie is die dit goed doet."
+      ]
+    }
+  },
+  "versie": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer of hostingpartij het versienummer weghalen uit de headers die de scan noemt, zoals Server en X-Powered-By.",
+        "Bij nginx gaat dat met server_tokens off, bij Apache met ServerTokens Prod en ServerSignature Off, en bij PHP met expose_php = Off.",
+        "Staat de versie in een generator-regel in je HTML, zet die dan uit in je websitesysteem of met een plugin.",
+        "Werk de software ook bij als die verouderd is."
+      ]
+    }
+  },
+  "mixed": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zoek in de broncode van je homepage naar adressen die met http:// beginnen; de scan noemt er een als voorbeeld.",
+        "Vervang ze door https://, of zet het onderdeel op je eigen website als de andere partij geen https heeft.",
+        "Staat het adres in je websitesysteem of thema, pas het daar aan en leeg daarna de cache."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Controleer bij Instellingen > Algemeen dat beide adressen van je site met https:// beginnen.",
+          "Vaak staan er nog oude http://-adressen in je pagina's of in de instellingen van je thema.",
+          "Laat je webbouwer die in één keer vervangen door https://, na een back-up."
+        ]
+      }
+    }
+  },
+  "trackers": {
+    "matig": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Ga na welke trackers je echt gebruikt, en haal de rest van je site.",
+        "Laat de trackers die je houdt pas laden nadat een bezoeker toestemming heeft gegeven, met een toestemmingsvenster (cookiebanner).",
+        "Noem de trackers die je houdt in je privacyverklaring."
+      ]
+    }
+  },
+  "securitytxt": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Controleer het mailadres in het voorstel hieronder: het moet een adres zijn dat iemand echt leest.",
+        "Zet het voorstel als tekstbestand op /.well-known/security.txt van je website.",
+        "Zet een herinnering in je agenda om het bestand bij te werken voordat de datum bij Expires voorbij is."
+      ]
+    }
+  },
+  "ipv6-web": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je hostingpartij controleren of de webserver echt antwoordt op het IPv6-adres in je DNS.",
+        "Klopt het adres niet meer, bijvoorbeeld na een verhuizing, zet dan het juiste adres in het AAAA-record (het DNS-record voor een IPv6-adres) of haal het record weg."
+      ]
+    },
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je hostingpartij of je webserver een IPv6-adres heeft.",
+        "Zo ja, zet dat adres als AAAA-record (het DNS-record voor een IPv6-adres) bij je domeinnaam en bij www.",
+        "Zo nee, vraag of je kunt overstappen naar een pakket of server met IPv6."
+      ]
+    }
+  },
+  "ipv6-mail": {
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Vraag je mailleverancier of je mailserver een IPv6-adres heeft of kan krijgen.",
+        "Beheer je de mailserver zelf, zet dan een AAAA-record (het DNS-record voor een IPv6-adres) bij de naam in je MX-record."
+      ]
+    }
+  },
+  "ipv6-ns": {
+    "matig": {
+      "wie": "wie je domeinnaam beheert",
+      "stappen": [
+        "Vraag je DNS-leverancier of de nameservers IPv6-adressen hebben of kunnen krijgen.",
+        "Is dat niet zo, overweeg dan een DNS-leverancier met nameservers die via IPv6 bereikbaar zijn."
+      ]
+    }
+  },
+  "http2": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om HTTP/2 aan te zetten op de webserver.",
+        "Bij nginx en Apache is dat één instelling; bij een oud hostingpakket kan een overstap nodig zijn."
+      ]
+    }
+  },
+  "seo-titel": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Geef je homepage een titel van 30 tot 60 tekens, met wat je doet, waar, en je bedrijfsnaam.",
+        "Zet het belangrijkste vooraan, bijvoorbeeld: Loodgieter in Utrecht | Bedrijfsnaam.",
+        "Vul de titel in bij de SEO-instellingen van je websitesysteem, of laat je webbouwer hem zetten."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Open je homepage in de editor van WordPress.",
+          "Vul in het vak van Yoast SEO of Rank Math de SEO-titel in, van 30 tot 60 tekens.",
+          "Heb je geen SEO-plugin, installeer er dan een of vraag je webbouwer de titel te zetten."
+        ],
+        "Shopify": [
+          "Ga in Shopify naar Online Store > Preferences.",
+          "Vul daar de titel van je homepage in, van 30 tot 60 tekens, en sla op."
+        ]
+      }
+    }
+  },
+  "seo-beschrijving": {
+    "matig": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Schrijf een beschrijving van 120 tot 155 tekens die in één of twee zinnen zegt wat je doet en voor wie.",
+        "Vul die in bij de SEO-instellingen van je websitesysteem, of laat je webbouwer hem zetten."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Open je homepage in de editor van WordPress.",
+          "Vul in het vak van Yoast SEO of Rank Math de metabeschrijving in, van 120 tot 155 tekens."
+        ],
+        "Shopify": [
+          "Ga in Shopify naar Online Store > Preferences.",
+          "Vul daar de metabeschrijving van je homepage in, van 120 tot 155 tekens, en sla op."
+        ]
+      }
+    }
+  },
+  "seo-index": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Ga na of het bewust is, bijvoorbeeld omdat je site nog in de bouwfase is.",
+        "Zo niet, laat je webbouwer noindex weghalen uit de pagina en uit de X-Robots-Tag-header.",
+        "Staat er Disallow: / in je robots.txt voor alle zoekmachines of voor Googlebot, laat die regel dan weghalen.",
+        "Vraag Google daarna in Google Search Console om je homepage opnieuw te bekijken."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Ga in WordPress naar Instellingen > Lezen.",
+          "Zet bij Zichtbaarheid voor zoekmachines het vinkje uit en sla de wijzigingen op.",
+          "Kijk ook in je SEO-plugin of de homepage niet op noindex staat.",
+          "Vraag Google daarna in Google Search Console om je homepage opnieuw te bekijken."
+        ]
+      }
+    }
+  },
+  "seo-canonical": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer op elke pagina een canonical-link zetten: het volledige vaste adres van die pagina, beginnend met https://.",
+        "Gebruik daarin de naam waar je site echt op staat, met of zonder www."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Controleer bij Instellingen > Algemeen dat beide adressen van je site met https:// beginnen.",
+          "Gebruik een SEO-plugin zoals Yoast SEO of Rank Math; die zet de canonical-link op elke pagina."
+        ]
+      }
+    }
+  },
+  "seo-sitemap": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je websitesysteem of je webbouwer een sitemap maken, meestal op /sitemap.xml.",
+        "Zet het adres van de sitemap in je robots.txt met een regel die begint met Sitemap:.",
+        "Meld de sitemap ook aan in Google Search Console."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Zet in Yoast SEO de XML-sitemaps aan (Settings > Site features), of gebruik de sitemap van Rank Math.",
+          "Meld de sitemap daarna aan in Google Search Console."
+        ]
+      }
+    }
+  },
+  "seo-h1": {
+    "matig": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Zorg dat je homepage precies één hoofdkop (h1) heeft, die in één zin zegt wat je doet.",
+        "Maak andere grote koppen een niveau lager (h2); ze kunnen er hetzelfde uitzien, maar tellen dan niet als hoofdkop.",
+        "In de meeste websitesystemen kies je het niveau van een kop bij het tekstblok zelf."
+      ]
+    }
+  },
+  "seo-mobiel": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer in de head van elke pagina de viewport-regel zetten: meta name=viewport met width=device-width, initial-scale=1.",
+        "Open je site daarna op je telefoon en controleer of de tekst leesbaar is zonder inzoomen.",
+        "Past de opmaak zich dan nog niet aan, dan is een ontwerp of thema nodig dat geschikt is voor mobiel."
+      ]
+    }
+  },
+  "seo-taal": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer de taal in de html-tag zetten, bijvoorbeeld lang=\"nl\" voor een Nederlandse site.",
+        "Heeft je site meer talen, zet dan op elke pagina de taal van die pagina."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Kies bij Instellingen > Algemeen de juiste taal voor je site en sla op.",
+          "Staat de taal daarna nog niet in de html-tag, vraag je webbouwer dan om het thema aan te passen."
+        ]
+      }
+    }
+  },
+  "seo-schema": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer gestructureerde gegevens (schema.org, in de vorm JSON-LD) toevoegen met je bedrijfsnaam, adres, telefoonnummer en openingstijden.",
+        "Kies het soort dat bij je past, zoals LocalBusiness voor een winkel of praktijk, of anders Organization.",
+        "Controleer het resultaat met validator.schema.org."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Yoast SEO en Rank Math zetten gestructureerde gegevens over je bedrijf op je site.",
+          "Vul in Yoast SEO bij Settings > Site representation je bedrijfsnaam en logo in, of het vergelijkbare onderdeel in Rank Math.",
+          "Controleer het resultaat met validator.schema.org."
+        ]
+      }
+    }
+  },
+  "seo-delen": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer Open Graph-gegevens toevoegen: og:title, og:description en og:image.",
+        "Kies als afbeelding een plaatje van 1200 bij 630 pixels, bijvoorbeeld je logo of een foto van je werk.",
+        "Test het door het adres van je site in een WhatsApp-bericht aan jezelf te plakken."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Yoast SEO en Rank Math vullen de Open Graph-gegevens vanzelf, als je een van beide gebruikt.",
+          "Stel in de SEO-plugin een standaardafbeelding in voor delen, en per pagina een eigen afbeelding als je dat wilt."
+        ]
+      }
+    }
+  },
+  "seo-alt": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Geef elke afbeelding met inhoud een korte beschrijving (alt-tekst) van wat erop staat, bijvoorbeeld: monteur legt zonnepanelen op een dak.",
+        "Geef afbeeldingen die alleen voor de sier zijn een lege alt-tekst (alt=\"\"), zodat voorleessoftware ze overslaat.",
+        "In de meeste websitesystemen vul je de alt-tekst in bij de afbeelding in de mediabibliotheek of in het blok."
+      ]
+    }
+  },
+  "seo-www": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Kies één voorkeursadres: met of zonder www.",
+        "Laat de andere variant met een permanente doorverwijzing (301) naar dat adres sturen.",
+        "Werkt www nog helemaal niet, zet dan eerst een DNS-record voor www bij je domeinnaam en zorg voor een certificaat dat ook www dekt."
+      ]
+    }
+  },
+  "geo-crawlers": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Bepaal eerst of je wilt dat AI-assistenten je kunnen noemen als iemand ze om advies vraagt.",
+        "Wil je dat, laat dan de regels in je robots.txt aanpassen volgens het voorstel hieronder.",
+        "Wil je niet dat je tekst wordt gebruikt om AI-modellen te trainen, dan kun je de trainingscrawlers apart blijven tegenhouden."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Bepaal eerst of je wilt dat AI-assistenten je kunnen noemen als iemand ze om advies vraagt.",
+          "Open in Yoast SEO het onderdeel Tools > File editor, of vraag je hostingpartij om het bestand robots.txt.",
+          "Pas de regels aan volgens het voorstel hieronder en sla op."
+        ]
+      }
+    },
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Bepaal per dienst of je hem wilt toelaten; de scan noemt welke nu zijn buitengesloten.",
+        "Wil je ze toelaten, laat je robots.txt dan aanpassen volgens het voorstel hieronder."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Bepaal per dienst of je hem wilt toelaten; de scan noemt welke nu zijn buitengesloten.",
+          "Pas je robots.txt aan volgens het voorstel hieronder, in Yoast SEO bij Tools > File editor of via je hostingpartij."
+        ]
+      }
+    }
+  },
+  "geo-llms": {
+    "matig": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Vul het voorstel hieronder aan: wie je bent, wat je doet, en je belangrijkste pagina's met een korte uitleg.",
+        "Zet het als tekstbestand op /llms.txt van je website, met als eerste regel een kop die begint met #.",
+        "Werk het bij als je diensten of pagina's veranderen."
+      ]
+    }
+  },
+  "geo-entiteit": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Controleer de gegevens in het voorstel hieronder, zoals je bedrijfsnaam, adres, telefoonnummer en KvK-nummer.",
+        "Laat je webbouwer het als JSON-LD-blok (gestructureerde gegevens) in de head van je homepage zetten.",
+        "Controleer het resultaat met validator.schema.org."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Vul in Yoast SEO bij Settings > Site representation je bedrijfsnaam en logo in, of het vergelijkbare onderdeel in Rank Math.",
+          "Vul de andere gegevens uit het voorstel hieronder aan, zoals adres en telefoonnummer, als je plugin dat kan, of laat je webbouwer ze toevoegen.",
+          "Controleer het resultaat met validator.schema.org."
+        ]
+      }
+    }
+  },
+  "geo-tekst": {
+    "slecht": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Zet op je homepage een paar alinea's gewone tekst over wat je doet, voor wie en waar.",
+        "Wordt je tekst pas door JavaScript opgebouwd, vraag je webbouwer dan om de pagina op de server te laten maken, zodat de tekst al in de HTML staat.",
+        "Bekijk daarna in je browser de paginabron (Ctrl+U) en controleer of je tekst daarin te lezen is."
+      ]
+    },
+    "matig": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Vul je homepage aan tot een paar alinea's over wat je doet, voor wie en waar je werkt.",
+        "Beantwoord daarin in gewone zinnen de vragen die klanten je vaak stellen."
+      ]
+    }
+  },
+  "geo-snippet": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Ga na of het bewust is dat je pagina nosnippet, max-snippet:0 of noai bevat.",
+        "Zo niet, laat je webbouwer die waarde weghalen uit de robots-metatag en uit de X-Robots-Tag-header."
+      ]
+    }
+  },
+  "geo-contact": {
+    "matig": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Zet je mailadres en telefoonnummer op je homepage, bijvoorbeeld onderaan de pagina.",
+        "Zet ze als gewone tekst, niet alleen in een plaatje.",
+        "Maak ze klikbaar met mailto: en tel:, zodat bezoekers op hun telefoon meteen kunnen mailen of bellen."
+      ]
+    }
+  },
+  "snel-ttfb": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om paginacache aan te zetten, zodat pagina's niet bij elk bezoek opnieuw worden gemaakt.",
+        "Laat onderdelen of plugins die de server traag maken opsporen en weghalen.",
+        "Helpt dat niet genoeg, kies dan een sneller hostingpakket of een server dichter bij je bezoekers."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Zet een cacheplugin aan, of de paginacache van je hostingpartij.",
+          "Zet plugins die je niet gebruikt uit en verwijder ze.",
+          "Helpt dat niet genoeg, vraag je hostingpartij dan om een sneller pakket."
+        ]
+      }
+    }
+  },
+  "snel-grootte": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer uitzoeken wat de HTML van je homepage zo groot maakt, vaak ingebouwde code of ingebouwde afbeeldingen.",
+        "Laat ingebouwde afbeeldingen en grote stukken code als losse bestanden laden.",
+        "Haal onderdelen weg die op de homepage niet nodig zijn, zoals lange lijsten of verborgen menu's."
+      ]
+    }
+  },
+  "snel-compressie": {
+    "slecht": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Vraag je webbouwer of hostingpartij om compressie aan te zetten op de webserver, het liefst Brotli en anders gzip.",
+        "Bij nginx gaat dat met de regel gzip on, en bij Apache met de module mod_deflate."
+      ]
+    }
+  },
+  "snel-cache": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer of hostingpartij een lange bewaartijd instellen voor stylesheets, scripts en afbeeldingen, bijvoorbeeld Cache-Control: max-age=31536000 (een jaar).",
+        "Zorg dat de bestandsnaam of een versienummer verandert als een bestand verandert, zodat bezoekers toch de nieuwe versie krijgen."
+      ]
+    }
+  },
+  "snel-blokkerend": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer de scripts in de head laden met defer of async, zodat de pagina niet op ze hoeft te wachten.",
+        "Voeg stylesheets waar het kan samen tot een paar bestanden.",
+        "Haal scripts en stylesheets weg die op deze pagina niet worden gebruikt."
+      ]
+    }
+  },
+  "snel-afbeeldingen": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat afbeeldingen die niet meteen in beeld zijn laden met loading=\"lazy\".",
+        "Sla foto's op als WebP of AVIF in plaats van JPG of PNG.",
+        "Maak afbeeldingen niet groter dan ze op het scherm worden getoond."
+      ]
+    }
+  },
+  "snel-extern": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Bekijk de lijst van andere partijen die de scan noemt, en haal weg wat je niet meer gebruikt, zoals oude widgets, chatknoppen of trackers.",
+        "Zet lettertypen en scripts die je houdt waar het kan op je eigen website, in plaats van ze bij een andere partij op te halen."
+      ]
+    }
+  },
+  "privacy": {
+    "matig": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Schrijf een privacyverklaring: welke gegevens je verzamelt, waarom, hoe lang je ze bewaart en met wie je ze deelt.",
+        "Zet die op een eigen pagina, met het woord privacy in het adres, bijvoorbeeld /privacy.",
+        "Zet onderaan elke pagina een link naar die pagina."
+      ]
+    }
+  },
+  "kvk": {
+    "matig": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Zet je KvK-nummer op je homepage, bijvoorbeeld onderaan de pagina, in de vorm KvK-nummer: 12345678.",
+        "Zet het als gewone tekst, niet in een plaatje, zodat zoekmachines het kunnen lezen."
+      ]
+    }
+  },
+  "toestemming": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer een toestemmingsvenster (cookiebanner) plaatsen dat om toestemming vraagt voordat trackers laden.",
+        "Zorg dat weigeren net zo makkelijk is als accepteren, met een knop in het eerste scherm.",
+        "Controleer daarna dat de trackers pas laden nadat iemand ja heeft gezegd."
+      ],
+      "varianten": {
+        "WordPress": [
+          "Installeer een plugin voor cookietoestemming die trackers tegenhoudt tot een bezoeker ja zegt.",
+          "Laat je trackers via die plugin laden, in plaats van rechtstreeks in je thema.",
+          "Zorg dat weigeren net zo makkelijk is als accepteren, met een knop in het eerste scherm."
+        ]
+      }
+    }
+  },
+  "cert-www": {
+    "alle": {
+      "wie": "je hostingpartij of je webbouwer",
+      "stappen": [
+        "Zorg dat het certificaat van je website ook de andere naam dekt: zowel jouwdomein.nl als www.jouwdomein.nl.",
+        "Bij Let's Encrypt vraag je één certificaat aan voor beide namen; bij de meeste hostingpartijen is dat één vinkje.",
+        "Controleer daarna in een privévenster dat https://www.jouwdomein.nl/ zonder waarschuwing opent."
+      ]
+    }
+  },
+  "software": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Log in op WordPress en ga naar Dashboard → Updates.",
+        "Maak eerst een back-up, werk dan WordPress bij naar de nieuwste versie.",
+        "Zet automatische updates aan voor kleine versies, zodat beveiligingsupdates vanzelf gaan.",
+        "Werk ook je plug-ins en thema bij, en verwijder wat je niet gebruikt."
+      ]
+    }
+  },
+  "bibliotheken": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zoek op welke pagina's en plug-ins de genoemde bibliotheek laden.",
+        "Werk die bibliotheek, of de plug-in of het thema dat hem meebrengt, bij naar een versie zonder bekende lekken.",
+        "Gebruik je hem niet meer, haal hem dan weg."
+      ]
+    }
+  },
+  "php": {
+    "alle": {
+      "wie": "je hostingpartij",
+      "stappen": [
+        "Vraag je hostingpartij om je site over te zetten naar een PHP-versie die nog updates krijgt (zie php.net/supported-versions).",
+        "Test je site daarna: oude plug-ins werken soms niet met een nieuwe PHP.",
+        "Laat de server ook de PHP-versie niet meer tonen (expose_php = Off)."
+      ]
+    }
+  },
+  "sri": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zet bij elk script en stylesheet van een openbare CDN een integrity-attribuut met het controlegetal, plus crossorigin=\"anonymous\". De meeste CDN's geven die regel kant-en-klaar.",
+        "Of beter: zet de bestanden op je eigen server, dan heb je geen CDN nodig."
+      ]
+    }
+  },
+  "formulieren": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat elk formulier versturen naar een adres dat met https:// begint.",
+        "Controleer ook formulieren van plug-ins of nieuwsbriefdiensten."
+      ]
+    }
+  },
+  "dmarc-sub": {
+    "alle": {
+      "wie": "wie je DNS beheert (vaak je hostingpartij of domeinleverancier)",
+      "stappen": [
+        "Pas je DMARC-regel aan: haal sp=none en np=none weg, of zet ze op quarantine of reject.",
+        "Zonder sp geldt het beleid van je hoofddomein ook voor subdomeinen; dat is meestal wat je wilt."
+      ]
+    }
+  },
+  "dmarc-extern": {
+    "alle": {
+      "wie": "de partij die je DMARC-rapporten verwerkt",
+      "stappen": [
+        "Vraag de partij die je rapporten ontvangt om toestemming te zetten voor jouw domein: een TXT-record jouwdomein._report._dmarc.hundomein met de waarde v=DMARC1.",
+        "Bij bekende DMARC-diensten gaat dat meestal vanzelf zodra je je domein bij hen toevoegt; controleer of je dat gedaan hebt."
+      ]
+    }
+  },
+  "spf-fouten": {
+    "alle": {
+      "wie": "wie je DNS beheert (vaak je hostingpartij of domeinleverancier)",
+      "stappen": [
+        "Haal ptr uit je SPF-regel; noem je mailservers met include, a of ip4.",
+        "Zet all als laatste onderdeel; alles erna wordt nooit gelezen.",
+        "Houd de regel kort: gebruik includes van je mailleveranciers in plaats van losse adressen."
+      ]
+    }
+  },
+  "geen-mail": {
+    "alle": {
+      "wie": "wie je DNS beheert (vaak je hostingpartij of domeinleverancier)",
+      "stappen": [
+        "Zet een null-MX-record: MX 0 . (een punt).",
+        "Zet de SPF-regel op v=spf1 -all.",
+        "Zet een DMARC-regel op _dmarc: v=DMARC1; p=reject;"
+      ]
+    }
+  },
+  "mx-geldig": {
+    "alle": {
+      "wie": "wie je DNS beheert (vaak je hostingpartij of domeinleverancier)",
+      "stappen": [
+        "Laat elk MX-record naar een naam met een eigen A- of AAAA-record wijzen, niet naar een IP-adres of een CNAME.",
+        "Haal MX-records weg die naar een server zonder adres wijzen."
+      ]
+    }
+  },
+  "mx-dnssec": {
+    "alle": {
+      "wie": "wie je DNS beheert (vaak je hostingpartij of domeinleverancier)",
+      "stappen": [
+        "Zet DNSSEC aan voor het domein waar je mailserver op staat. Bij de meeste DNS-beheerders is dat één knop.",
+        "Daarna kun je DANE gebruiken voor je mail."
+      ]
+    }
+  },
+  "mta-sts-mx": {
+    "alle": {
+      "wie": "wie je DNS beheert (vaak je hostingpartij of domeinleverancier) of wie je mail beheert",
+      "stappen": [
+        "Zet in je MTA-STS-beleid (mta-sts.txt) een mx-regel voor elke mailserver uit je MX-records, bijvoorbeeld mx: *.mail.protection.outlook.com.",
+        "Verhoog daarna het id in het TXT-record _mta-sts, zodat andere servers het nieuwe beleid ophalen."
+      ]
+    }
+  },
+  "caa-ca": {
+    "alle": {
+      "wie": "wie je DNS beheert (vaak je hostingpartij of domeinleverancier)",
+      "stappen": [
+        "Zet in je CAA-regel de naam van de leverancier van je huidige certificaat, bijvoorbeeld 0 issue \"letsencrypt.org\".",
+        "Wissel je van leverancier, pas dan eerst de CAA-regel aan."
+      ]
+    }
+  },
+  "txt-schoon": {
+    "alle": {
+      "wie": "wie je DNS beheert (vaak je hostingpartij of domeinleverancier)",
+      "stappen": [
+        "Open de genoemde TXT-regel en typ hem opnieuw in, zonder te plakken uit een tekstverwerker.",
+        "Let op rechte aanhalingstekens en geen spaties of tekens aan het begin of eind."
+      ]
+    }
+  },
+  "seo-robots": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zorg dat /robots.txt gewoon antwoordt (HTTP 200), of helemaal niet bestaat (404).",
+        "Haal regels weg die stylesheets en scripts blokkeren, zoals Disallow: /wp-includes/.",
+        "Zet er een regel Sitemap: https://jouwdomein.nl/sitemap.xml bij."
+      ]
+    }
+  },
+  "seo-links": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Vervang linkteksten als \"klik hier\" en \"lees meer\" door een tekst die zegt waar de link heen gaat, bijvoorbeeld \"Bekijk onze openingstijden\".",
+        "Gebruik echte links (href) in plaats van javascript:."
+      ]
+    }
+  },
+  "seo-omleidingen": {
+    "alle": {
+      "wie": "je webbouwer of je hostingpartij",
+      "stappen": [
+        "Gebruik voor blijvende doorverwijzingen 301 of 308, niet 302 of 307.",
+        "Stuur http:// en de www-variant in één stap naar het uiteindelijke adres, zonder tussenstappen."
+      ]
+    }
+  },
+  "geo-profielen": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Zet in de voet van je site links naar je bedrijfsprofielen, zoals LinkedIn, Google Bedrijfsprofiel en Facebook.",
+        "Zet dezelfde adressen in je gestructureerde gegevens als sameAs bij je Organization of LocalBusiness."
+      ]
+    }
+  },
+  "geo-versheid": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat het jaartal in de voet automatisch het huidige jaar tonen.",
+        "Werk je homepage af en toe bij, en zet een wijzigingsdatum (dateModified) in je gestructureerde gegevens."
+      ]
+    }
+  },
+  "geo-schema": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Test je gestructureerde gegevens met de Rich Results Test van Google of validator.schema.org.",
+        "Herstel het blok dat niet te lezen is, en vul bij je bedrijf naam, adres en telefoonnummer in."
+      ]
+    }
+  },
+  "snel-afmetingen": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Geef elke afbeelding een width en height in de HTML, met de echte verhouding van de afbeelding.",
+        "Met CSS kun je hem daarna nog steeds schalen; de browser houdt dan alvast de juiste ruimte vrij."
+      ]
+    }
+  },
+  "snel-eerste": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Haal loading=\"lazy\" weg bij de eerste en grootste afbeelding bovenaan de pagina.",
+        "Geef die afbeelding liever fetchpriority=\"high\". Laat lazy staan bij afbeeldingen verderop."
+      ]
+    }
+  },
+  "snel-onderdelen": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Kijk welke blokken, sliders of plug-ins veel onderdelen aan je homepage toevoegen, en haal weg wat niet nodig is.",
+        "Laat lange lijsten en menu's pas laden als iemand erom vraagt."
+      ]
+    }
+  },
+  "snel-gewicht": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Verklein de genoemde afbeeldingen tot de maat waarop ze getoond worden.",
+        "Sla ze op als WebP of AVIF; dat scheelt vaak de helft.",
+        "Gebruik WordPress? Een plug-in voor beeldcompressie doet dit automatisch."
+      ]
+    }
+  },
+  "snel-overbodig": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Haal de code van de oude Google Analytics (UA-) weg uit je site of uit Google Tag Manager.",
+        "Gebruik je nog statistieken, zet dan Google Analytics 4 of een privacyvriendelijk alternatief neer, met toestemming."
+      ]
+    }
+  },
+  "bedrijfsgegevens": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Zet in de voet van je site: je bedrijfsnaam, adres, e-mailadres, KvK-nummer en btw-nummer.",
+        "Zet ze als gewone tekst, niet in een plaatje.",
+        "Een aparte contactpagina mag ook, als die vanaf elke pagina met één klik te vinden is."
+      ]
+    }
+  },
+  "voorwaarden": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Zet je algemene voorwaarden op je site, met een link in de voet.",
+        "Laat ze in je webshop vóór het bestellen zien, samen met de informatie over het herroepingsrecht.",
+        "Laat de tekst bij twijfel door een jurist nakijken."
+      ]
+    }
+  },
+  "vooraf": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat trackers pas laden na toestemming: zet ze in je toestemmingsvenster (cookiebanner) op blokkeren tot iemand ja zegt.",
+        "Gebruik je Google Tag Manager, zet dan Google Consent Mode aan met alles standaard op denied.",
+        "Controleer het zelf: open je site in een privévenster, klik nog niets aan, en kijk of er al verzoeken naar Google of Meta gaan."
+      ]
+    }
+  },
+  "opname": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Vraag je af of je de opnames echt gebruikt; zo niet, haal de dienst weg.",
+        "Houd je hem, laat hem dan pas na toestemming laden en zet het opnemen van formulieren uit.",
+        "Noem de dienst in je privacyverklaring."
+      ]
+    }
+  },
+  "ingesloten": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zet lettertypen op je eigen server in plaats van ze bij Google Fonts op te halen.",
+        "Gebruik voor YouTube youtube-nocookie.com, voor Vimeo dnt=1, en laad video's en kaarten pas na een klik (een plaatje met een afspeelknop)."
+      ]
+    }
+  },
+  "a11y-knoppen": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Geef elke knop een zichtbare tekst. Heeft een knop alleen een pictogram, geef hem dan een aria-label, bijvoorbeeld aria-label=\"Menu openen\"."
+      ]
+    }
+  },
+  "a11y-links": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Geef elke link een tekst. Bestaat een link alleen uit een afbeelding of pictogram, geef die afbeelding dan een alt-tekst die zegt waar de link heen gaat."
+      ]
+    }
+  },
+  "a11y-labels": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zet bij elk invulveld een label: <label for=\"email\">E-mailadres</label> bij <input id=\"email\">.",
+        "Een tekst in het veld zelf (placeholder) is geen label: die verdwijnt zodra je typt."
+      ]
+    }
+  },
+  "a11y-zoom": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Pas de viewport-regel in de head aan naar: width=device-width, initial-scale=1.",
+        "Haal user-scalable=no en maximum-scale weg."
+      ]
+    }
+  },
+  "a11y-overslaan": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zet de hoofdinhoud van elke pagina in een <main>-element.",
+        "Zet als eerste link een link naar de inhoud (Naar de inhoud), die zichtbaar wordt als je met Tab begint."
+      ]
+    }
+  },
+  "a11y-koppen": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Gebruik één h1 voor de titel, h2 voor de hoofdstukken en h3 daaronder, zonder niveaus over te slaan.",
+        "Wil je een kop kleiner, pas dan de opmaak aan, niet het niveau."
+      ]
+    }
+  },
+  "a11y-frames": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Geef elke iframe een title die zegt wat erin staat, bijvoorbeeld title=\"Kaart met onze locatie\"."
+      ]
+    }
+  },
+  "a11y-overlay": {
+    "alle": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Haal de widget weg en los de echte problemen op in de site zelf: knoppen, links en velden met een naam, voldoende contrast en bediening met het toetsenbord.",
+        "Laat een toegankelijkheidstest doen, bijvoorbeeld met een ervaringsdeskundige."
+      ]
+    }
+  },
+  "a11y-verklaring": {
+    "alle": {
+      "wie": "je webbouwer of jijzelf",
+      "stappen": [
+        "Zet een pagina op je site die uitlegt hoe toegankelijk je webshop is, wat nog niet werkt en hoe klanten contact opnemen bij een probleem.",
+        "Link er vanuit de voet naartoe."
+      ]
+    }
+  }
+}

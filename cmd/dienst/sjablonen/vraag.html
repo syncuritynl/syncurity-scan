@@ -1,0 +1,11 @@
+{{define "vraag"}}{{template "begin" .}}
+<main>
+  <section class="held" aria-labelledby="vraag">
+    <div class="held-in">
+      <h1 id="vraag">{{.Kop}}</h1>
+      {{if .Fout}}<p class="melding-fout" id="domein-fout" role="alert">{{.Fout}}</p>{{template "formulier-fout" .Invoer}}{{else}}<p class="lead">{{.Lead}}</p>{{template "formulier" .Invoer}}{{end}}
+      <p class="belofte">Gratis, geen account en binnen enkele seconden klaar.</p>
+    </div>
+  </section>
+</main>
+{{template "eind" .}}{{end}}
