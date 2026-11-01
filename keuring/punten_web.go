@@ -20,18 +20,18 @@ import (
 // certWWW: het certificaat moet ook kloppen voor de andere naam (met of
 // zonder www). Wie die typt, krijgt anders een rode waarschuwing.
 func certWWW(w *web) Punt {
-	const id, tech, titel = "cert-www", "X.509 · www", "Certificaat ook voor de andere naam"
+	const id, tech, titel = "cert-www", "X.509 · www", "Certificaat ook voor de naam met of zonder www"
 	if !w.andereAdres {
 		return punt(id, tech, NVT, titel, fmt.Sprintf("%s heeft geen adres, dus daar valt geen certificaat te controleren.", w.andere))
 	}
 	if w.andereStaat == nil {
-		return punt(id, tech, Slecht, "De andere naam heeft geen beveiligde verbinding",
+		return punt(id, tech, Slecht, "De naam met of zonder www heeft geen beveiligde verbinding",
 			fmt.Sprintf("Wie %s typt, krijgt geen beveiligde verbinding. Veel mensen typen die variant uit gewoonte.", w.andere)).
 			metDetail("Handdruk met " + w.andere + " mislukt: " + fmt.Sprint(w.andereFout))
 	}
 	certs := w.andereStaat.PeerCertificates
 	if len(certs) == 0 {
-		return punt(id, tech, Slecht, "Geen certificaat voor de andere naam", "De andere naam stuurt geen certificaat mee.")
+		return punt(id, tech, Slecht, "Geen certificaat voor de naam met of zonder www", "De naam met of zonder www stuurt geen certificaat mee.")
 	}
 	tussen := x509.NewCertPool()
 	for _, c := range certs[1:] {
@@ -43,19 +43,19 @@ func certWWW(w *web) Punt {
 	var ongeldig x509.CertificateInvalidError
 	switch {
 	case errors.As(err, &naam):
-		return punt(id, tech, Slecht, "Het certificaat geldt niet voor de andere naam",
+		return punt(id, tech, Slecht, "Het certificaat geldt niet voor de naam met of zonder www",
 			fmt.Sprintf("Wie %s typt, krijgt een waarschuwing dat de site niet veilig is: het certificaat is voor een andere naam uitgegeven.", w.andere)).met(gezien).metDetail("Fout: " + err.Error())
 	case errors.As(err, &ongeldig) && ongeldig.Reason == x509.Expired:
-		return punt(id, tech, Slecht, "Het certificaat van de andere naam is verlopen",
+		return punt(id, tech, Slecht, "Het certificaat van de naam met of zonder www is verlopen",
 			fmt.Sprintf("Wie %s typt, krijgt een waarschuwing dat de site niet veilig is.", w.andere)).met(gezien)
 	case err != nil:
-		return punt(id, tech, Slecht, "Het certificaat van de andere naam wordt niet vertrouwd",
+		return punt(id, tech, Slecht, "Het certificaat van de naam met of zonder www wordt niet vertrouwd",
 			fmt.Sprintf("Browsers vertrouwen het certificaat van %s niet. Bezoekers die die naam typen, krijgen een waarschuwing.", w.andere)).met(gezien).metDetail("Fout: " + err.Error())
 	case time.Until(certs[0].NotAfter) < 14*24*time.Hour:
-		return punt(id, tech, Matig, "Het certificaat van de andere naam verloopt binnenkort",
+		return punt(id, tech, Matig, "Het certificaat van de naam met of zonder www verloopt binnenkort",
 			"Wordt het niet op tijd vernieuwd, dan krijgen bezoekers die deze naam typen een waarschuwing.").met(gezien)
 	default:
-		return punt(id, tech, Goed, "Certificaat ook voor de andere naam",
+		return punt(id, tech, Goed, "Certificaat ook voor de naam met of zonder www",
 			fmt.Sprintf("Ook wie %s typt, krijgt een geldige, beveiligde verbinding.", w.andere)).met(gezien)
 	}
 }
@@ -64,7 +64,7 @@ func certWWW(w *web) Punt {
 
 // software: WordPress-versie tegen de lijst van wordpress.org.
 func software(w *web) Punt {
-	const id, tech, titel = "software", "WordPress", "Software bijgewerkt"
+	const id, tech, titel = "software", "WordPress", "WordPress bijgewerkt"
 	laadSoftware()
 	isWP := strings.Contains(string(w.body), "/wp-content/") || strings.Contains(string(w.body), "/wp-includes/") ||
 		strings.Contains(strings.ToLower(w.info.x.generator), "wordpress")
@@ -805,7 +805,7 @@ func a11yOverlay(w *web) Punt {
 func a11yVerklaring(w *web) Punt {
 	const id, tech, titel = "a11y-verklaring", "EAA", "Toegankelijkheidsverklaring"
 	if w.info.x.toegankelijkLink {
-		return punt(id, tech, Goed, titel, "Vanaf je homepage is informatie over de toegankelijkheid van je site te vinden.")
+		return punt(id, tech, Goed, titel, "Je homepage linkt naar een toegankelijkheidsverklaring.").met("Link: " + w.info.x.toegankelijkHref)
 	}
 	if w.info.x.winkel {
 		return punt(id, tech, Matig, "Geen toegankelijkheidsverklaring",

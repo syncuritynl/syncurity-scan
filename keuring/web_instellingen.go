@@ -16,7 +16,7 @@ func (k *keurder) instellingen(ctx context.Context, w *web) Groep {
 	if w.host == "" || w.pagina == nil || w.geweigerd != 0 {
 		s, reden := geenPagina(w)
 		for _, p := range []struct{ id, tech, titel string }{
-			{"csp", "CSP", "Beleid voor scripts"}, {"nosniff", "nosniff", "Bestanden niet herinterpreteren"},
+			{"csp", "CSP", "Beleid voor scripts"}, {"nosniff", "nosniff", "Bestandstype ligt vast"},
 			{"frame", "frame-ancestors", "Niet in te bedden"}, {"referrer", "Referrer-Policy", "Niet doorgeven waar bezoekers vandaan komen"},
 			{"cookies", "Secure · SameSite", "Veilige cookies"}, {"versie", "Server", "Softwareversie verborgen"},
 			{"mixed", "mixed content", "Alles via https geladen"}, {"trackers", "externe scripts", "Geen trackers zonder toestemming"},
@@ -108,14 +108,14 @@ func richtlijn(csp, naam string) string {
 
 func nosniff(w *web) Punt {
 	if strings.EqualFold(strings.TrimSpace(w.kop("X-Content-Type-Options")), "nosniff") {
-		return punt("nosniff", "nosniff", Goed, "Bestanden worden niet herinterpreteerd",
+		return punt("nosniff", "nosniff", Goed, "Bestandstype ligt vast",
 			"De browser voert een plaatje of tekstbestand nooit uit als script.").met("X-Content-Type-Options: nosniff")
 	}
 	d := ontbreektOp(w, "X-Content-Type-Options")
 	if v := w.kop("X-Content-Type-Options"); v != "" {
 		d = []string{"X-Content-Type-Options staat op \"" + v + "\"; de enige geldige waarde is nosniff."}
 	}
-	return punt("nosniff", "nosniff", Matig, "Bestanden kunnen worden herinterpreteerd",
+	return punt("nosniff", "nosniff", Matig, "Bestandstype ligt niet vast",
 		"Zonder deze instelling kan een browser een geüpload bestand als script uitvoeren.").metDetail(d...)
 }
 
@@ -144,15 +144,15 @@ func referrer(w *web) Punt {
 	}
 	switch laatste {
 	case "":
-		return punt("referrer", "Referrer-Policy", Matig, "Bezoekers kunnen worden nagewezen",
+		return punt("referrer", "Referrer-Policy", Matig, "Andere sites kunnen zien waar bezoekers vandaan komen",
 			"Er staat geen Referrer-Policy. Moderne browsers geven andere sites dan alleen je domeinnaam door; met een eigen instelling leg je dat vast, ook voor oudere browsers.").
 			metDetail(ontbreektOp(w, "Referrer-Policy")...)
 	case "unsafe-url", "no-referrer-when-downgrade":
-		return punt("referrer", "Referrer-Policy", Matig, "Bezoekers worden nagewezen",
+		return punt("referrer", "Referrer-Policy", Matig, "Andere sites zien waar bezoekers vandaan komen",
 			"Je site geeft het volledige adres van de pagina door aan andere sites waar een bezoeker op klikt.").met("Referrer-Policy: " + v).
 			metDetail("De laatste waarde telt: " + laatste + ". Kies strict-origin-when-cross-origin of strenger.")
 	default:
-		return punt("referrer", "Referrer-Policy", Goed, "Bezoekers worden niet nagewezen",
+		return punt("referrer", "Referrer-Policy", Goed, "Niet doorgeven waar bezoekers vandaan komen",
 			"Andere sites krijgen niet te zien vanaf welke pagina een bezoeker kwam.").met("Referrer-Policy: " + v)
 	}
 }

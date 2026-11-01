@@ -159,7 +159,9 @@ func (k *keurder) haalWeb(ctx context.Context, host string) *web {
 		}
 		if w.geweigerd/100 == 3 {
 			if u, err := w.pagina.Location(); err == nil {
-				w.weg = u.Hostname()
+				// De naam komt van de site zelf en staat straks onder onze naam in
+				// het rapport: kort en zonder stuur- of bidi-tekens.
+				w.weg = kort(schoon(u.Hostname()), 80)
 			}
 		}
 		w.info.geldig = false
@@ -400,11 +402,13 @@ func zelfdeAdres(loc, host string) bool {
 }
 
 // naarSecurityTxt volgt doorverwijzingen naar elk domein, maar alleen via
-// https en alleen naar een security.txt. security.txt mag naar een ander
-// domein verwijzen (RFC 9116); een willekeurig pad bij een ander niet: dan zou
-// de scan namens ons verzoeken naar keuze bij derden kunnen doen.
+// https en alleen naar /.well-known/security.txt of /security.txt, zonder query.
+// security.txt mag naar een ander domein verwijzen (RFC 9116); een willekeurig
+// pad bij een ander niet: dan zou de scan namens ons verzoeken naar keuze bij
+// derden kunnen doen.
 func naarSecurityTxt(req *http.Request, via []*http.Request) error {
-	if len(via) >= 3 || req.URL.Scheme != "https" || !strings.HasSuffix(req.URL.Path, "/security.txt") {
+	pad := req.URL.Path
+	if len(via) >= 3 || req.URL.Scheme != "https" || (pad != "/.well-known/security.txt" && pad != "/security.txt") || req.URL.RawQuery != "" {
 		return http.ErrUseLastResponse
 	}
 	return nil

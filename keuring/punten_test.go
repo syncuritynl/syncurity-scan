@@ -184,3 +184,28 @@ func TestOrganisatieType(t *testing.T) {
 		}
 	}
 }
+
+// Alleen een echte verklaring telt. Tot 1-11-2026 was elke link met
+// "toegankelijk" genoeg, ook de uitlegpagina op syncurity.nl zelf.
+func TestVerklaringLink(t *testing.T) {
+	for _, tc := range []struct {
+		naam, href string
+		wil        bool
+	}{
+		{"Toegankelijkheid", "/toegankelijkheid/", true},
+		{"Toegankelijkheidsverklaring", "https://www.toegankelijkheidsverklaring.nl/register/123", true},
+		{"Over deze site", "/over/toegankelijkheidsverklaring", true},
+		{"Accessibility", "/en/accessibility", true},
+		{"Accessibility statement", "/about/accessibility", true},
+		{"Toegankelijkheid", "/toegankelijkheid.html", true},
+		{"Toegankelijkheidsverklaring", "/uitleg/toegankelijkheid/", false}, // syncurity.nl: uitleg, geen verklaring
+		{"Toegankelijke fietsen", "/producten/toegankelijke-fietsen", false},
+		{"Waarom toegankelijkheid telt", "/blog/toegankelijkheid", false},
+		{"Rolstoeltoegankelijk", "/locatie", false},
+		{"Meer", "/over/toegankelijkheid-van-ons-pand", false},
+	} {
+		if got := verklaringLink(tc.naam, tc.href); got != tc.wil {
+			t.Errorf("verklaringLink(%q, %q) = %v, verwacht %v", tc.naam, tc.href, got, tc.wil)
+		}
+	}
+}

@@ -2,6 +2,7 @@ package keuring
 
 import (
 	"errors"
+	"net/http"
 	"net/netip"
 	"strings"
 	"testing"
@@ -241,5 +242,21 @@ func TestSchoonDetail(t *testing.T) {
 	}
 	if l := lijstje([]string{"a", "b", "c", "d"}, 3); len(l) != 3 || l[2] != "en nog 2" {
 		t.Errorf("lijstje: %v", l)
+	}
+}
+
+func TestNaarSecurityTxt(t *testing.T) {
+	for adres, mag := range map[string]bool{
+		"https://ncsc.nl/.well-known/security.txt":                 true,
+		"https://ander.example/security.txt":                       true,
+		"http://ander.example/.well-known/security.txt":            false,
+		"https://slachtoffer.example/admin/verwijder/security.txt": false,
+		"https://ander.example/.well-known/security.txt?id=1":      false,
+		"https://ander.example/.well-known/security.txt.php":       false,
+	} {
+		req, _ := http.NewRequest("GET", adres, nil)
+		if got := naarSecurityTxt(req, nil) == nil; got != mag {
+			t.Errorf("%s: volgen %v, verwacht %v", adres, got, mag)
+		}
 	}
 }

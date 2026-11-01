@@ -2,6 +2,7 @@ package keuring
 
 import (
 	"encoding/json"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -39,6 +40,7 @@ type paginaExtra struct {
 	profielLinks      []string
 	voorwaardenLink   bool
 	toegankelijkLink  bool
+	toegankelijkHref  string
 	winkel            bool
 	generator         string
 	jaren             []int // jaartallen achter © of copyright
@@ -124,8 +126,9 @@ func ontleedExtra(doc *html.Node, body []byte) paginaExtra {
 					if strings.Contains(tekst, "voorwaarden") || strings.Contains(tekst, "terms") {
 						x.voorwaardenLink = true
 					}
-					if strings.Contains(tekst, "toegankelijkheid") || strings.Contains(tekst, "accessibility") || strings.Contains(tekst, "toegankelijk") {
+					if !x.toegankelijkLink && verklaringLink(naam, href) {
 						x.toegankelijkLink = true
+						x.toegankelijkHref = kort(schoon(href), 120)
 					}
 				}
 			case "button":
@@ -348,3 +351,56 @@ func jsonTypen(v any) []string {
 	}
 	return nil
 }
+
+// verklaringLink: of een link naar een toegankelijkheidsverklaring wijst. Niet elke
+// link met "toegankelijk" erin: een product "Toegankelijke fietsen" of een
+// uitlegpagina /uitleg/toegankelijkheid/ is geen verklaring. Wel: het register
+// toegankelijkheidsverklaring.nl, een pad dat ermee eindigt (/toegankelijkheid,
+// /over/accessibility-statement) en niet diep in de site zit, of een linktekst
+// die het zegt met een pad dat erbij past.
+func verklaringLink(naam, href string) bool {
+	u, err := url.Parse(strings.TrimSpace(href))
+	if err != nil {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	if host == "toegankelijkheidsverklaring.nl" || strings.HasSuffix(host, ".toegankelijkheidsverklaring.nl") {
+		return true
+	}
+	var delen []string
+	for _, d := range strings.Split(strings.ToLower(u.Path), "/") {
+		if d != "" {
+			delen = append(delen, d)
+		}
+	}
+	if len(delen) == 0 {
+		return false
+	}
+	laatste := delen[len(delen)-1]
+	if i := strings.LastIndex(laatste, "."); i > 0 {
+		laatste = laatste[:i] // toegankelijkheid.html
+	}
+	verklaringPad := strings.HasPrefix(laatste, "toegankelijkheid") || strings.HasPrefix(laatste, "accessibility")
+	if !verklaringPad {
+		return false
+	}
+	mappen := delen[:len(delen)-1]
+	if len(mappen) > 0 && len(mappen[0]) == 2 {
+		mappen = mappen[1:] // taalmap: /en/accessibility
+	}
+	for _, m := range mappen {
+		if inhoudsMappen[m] {
+			return false // een artikel of product, geen verklaring
+		}
+	}
+	if len(mappen) == 0 || strings.Contains(laatste, "verklaring") || strings.Contains(laatste, "statement") {
+		return true
+	}
+	n := strings.ToLower(strings.Join(strings.Fields(naam), " "))
+	return strings.Contains(n, "toegankelijkheidsverklaring") || strings.Contains(n, "accessibility statement") || n == "toegankelijkheid" || n == "accessibility"
+}
+
+// inhoudsMappen: mappen met artikelen, uitleg of producten. Een link daarin gaat
+// over toegankelijkheid, maar is niet de verklaring van de site zelf.
+var inhoudsMappen = setVan("uitleg", "blog", "blogs", "nieuws", "news", "kennisbank", "artikel", "artikelen",
+	"articles", "producten", "product", "products", "shop", "winkel", "categorie", "category", "tag", "tags", "diensten")

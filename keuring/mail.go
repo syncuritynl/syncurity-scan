@@ -42,7 +42,7 @@ func (k *keurder) mail(ctx context.Context) Groep {
 			punt("dkim", "DKIM", NVT, "Handtekening onder je mail", reden),
 			punt("mta-sts", "MTA-STS", NVT, "Mail komt versleuteld aan", reden),
 			punt("tls-rpt", "TLS-RPT", NVT, "Meldingen over versleuteling", reden),
-			punt("dane", "DANE", NVT, "Mailserver vastgelegd in DNSSEC", reden))
+			punt("dane", "DANE", NVT, "Mailserver te controleren via DNSSEC", reden))
 		g.Punten = append(g.Punten, stsMX(nil, "", nil), k.mxGeldig(ctx, nil), k.mxDNSSEC(ctx, nil))
 		return g
 	}
@@ -421,13 +421,13 @@ func (k *keurder) dane(ctx context.Context, mx []string) Punt {
 	gezien := fmt.Sprintf("%d van de %d mailservers", met, len(mx))
 	switch {
 	case met == len(mx):
-		return punt("dane", "DANE", Goed, "Je mailserver is vastgelegd in DNSSEC",
+		return punt("dane", "DANE", Goed, "Je mailserver is te controleren via DNSSEC",
 			"Andere mailservers kunnen controleren dat ze echt met jouw mailserver praten, en niet met een nagemaakte.").met(gezien).metDetail(detail...)
 	case met > 0:
-		return punt("dane", "DANE", Matig, "Een deel van je mailservers is vastgelegd",
-			"Niet al je mailservers zijn vastgelegd in DNSSEC.").met(gezien).metDetail(detail...)
+		return punt("dane", "DANE", Matig, "Een deel van je mailservers is te controleren",
+			"Niet al je mailservers zijn te controleren via DNSSEC (DANE).").met(gezien).metDetail(detail...)
 	default:
-		return punt("dane", "DANE", Matig, "Je mailserver is niet vastgelegd in DNSSEC",
+		return punt("dane", "DANE", Matig, "Je mailserver is niet te controleren via DNSSEC",
 			"Met DANE kunnen andere mailservers controleren dat ze met de echte praten. Veel mailleveranciers ondersteunen het nog niet; vraag het na.").met(gezien).metDetail(detail...)
 	}
 }

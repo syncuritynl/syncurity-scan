@@ -32,7 +32,7 @@ func (k *keurder) webIPv6(ctx context.Context, host string) Punt {
 	gezien := adressen(v6)
 	// Echt verbinden waar dat kan. Heeft de scanserver zelf geen IPv6, dan
 	// blijft het bij het DNS-record; dat is eerlijk genoeg.
-	for _, a := range v6 {
+	for _, a := range v6[:min(len(v6), maxPerFamilie)] {
 		c, err := k.kiezer.DialAdres(ctx, a, "443")
 		if err == nil {
 			c.Close()

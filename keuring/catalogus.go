@@ -8,9 +8,9 @@ type catalogusPunt struct {
 }
 
 var nieuwePunten = []catalogusPunt{
-	{"verbinding", "cert-www", "X.509 · www", "Certificaat ook voor de andere naam"},
+	{"verbinding", "cert-www", "X.509 · www", "Certificaat ook voor de naam met of zonder www"},
 
-	{"instellingen", "software", "WordPress", "Software bijgewerkt"},
+	{"instellingen", "software", "WordPress", "WordPress bijgewerkt"},
 	{"instellingen", "bibliotheken", "retire.js", "Scripts zonder bekende lekken"},
 	{"instellingen", "php", "X-Powered-By", "Ondersteunde PHP-versie"},
 	{"instellingen", "sri", "integrity", "Scripts van andere sites gecontroleerd"},

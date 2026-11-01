@@ -342,7 +342,7 @@ func (r *pdfRapport) groep(g keuring.Groep) {
 // ontgrendel: het blauwe vlak van de pagina, met een link naar aanmelden.
 func (r *pdfRapport) ontgrendel() {
 	d := r.d
-	tekst := "Log in op syncurity.nl en verifieer je domeinnaam. Dan zie je het volledige rapport."
+	tekst := "Maak een gratis account op syncurity.nl en laat zien dat de domeinnaam van jou is. Dan zie je het volledige rapport, met per punt hoe je het oplost."
 	regels := pdf.Afbreken(pdf.Gewoon, 10.5, breed-80, tekst)
 	h := 40 + 26 + float64(len(regels))*10.5*regelU + 24
 	r.past(h + 24)
