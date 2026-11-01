@@ -141,3 +141,46 @@ func TestCatalogusCompleet(t *testing.T) {
 		}
 	}
 }
+
+// Een garage met alleen AutoRepair: beide punten moeten hem als bedrijf zien.
+// Tot 1-11-2026 zei "Duidelijk wie je bent" hier "Niet vastgelegd", terwijl
+// "Gestructureerde gegevens kloppen" twee regels verder AutoRepair vond.
+func TestSubtypesVanLocalBusiness(t *testing.T) {
+	for _, tc := range []struct {
+		jsonld string
+		wie    Status // geo-entiteit
+		schema Status // geo-schema
+	}{
+		{`{"@type":"AutoRepair","name":"Garage","address":"Weg 1","telephone":"010"}`, Goed, Goed},
+		{`{"@type":"AutoRepair","name":"Garage"}`, Goed, Matig}, // lokaal: adres en telefoon horen erbij
+		{`{"@type":"https://schema.org/Dentist","name":"Tandarts","address":"x","telephone":"y"}`, Goed, Goed},
+		{`{"@graph":[{"@type":"WebSite"},{"@type":["Notary"],"name":"Notaris","address":"x","telephone":"y"}]}`, Goed, Goed},
+		{`{"@type":"OnlineStore","name":"Webwinkel"}`, Goed, Goed}, // geen LocalBusiness: geen adres nodig
+		{`{"@type":"NGO","name":"Stichting"}`, Goed, Goed},
+		{`{"@type":"Person","name":"Jan"}`, Goed, NVT},
+		{`{"@type":"WebSite","name":"Site"}`, Matig, NVT},
+		{`{"@type":"Service","name":"Taxi"}`, Matig, NVT}, // een dienst is geen organisatie
+	} {
+		body := `<!doctype html><html><head><script type="application/ld+json">` + tc.jsonld + `</script></head><body></body></html>`
+		w := &web{host: "voorbeeld.nl", body: []byte(body), pagina: &http.Response{StatusCode: 200, Header: http.Header{}}}
+		w.info = ontleed(w.body)
+		if p := geoEntiteit(w); p.Status != tc.wie {
+			t.Errorf("%s: geo-entiteit %s (%s), verwacht %s", tc.jsonld, p.Status, p.Titel, tc.wie)
+		}
+		if p := geoSchemaGeldig(w); p.Status != tc.schema {
+			t.Errorf("%s: geo-schema %s (%s), verwacht %s", tc.jsonld, p.Status, p.Titel, tc.schema)
+		}
+	}
+}
+
+func TestOrganisatieType(t *testing.T) {
+	for typ, wil := range map[string]bool{
+		"AutoRepair": true, "autorepair": true, "https://schema.org/Hotel": true, "schema:Plumber": true,
+		"Organization": true, "Corporation": true, "MedicalClinic": true, "SportsClub": true,
+		"WebSite": false, "Service": false, "Person": false, "Product": false, "": false,
+	} {
+		if organisatieType(typ) != wil {
+			t.Errorf("organisatieType(%q) = %v, verwacht %v", typ, !wil, wil)
+		}
+	}
+}

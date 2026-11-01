@@ -291,11 +291,10 @@ func leesJSONLD(s string, x *paginaExtra) {
 		case map[string]any:
 			typen := jsonTypen(o["@type"])
 			for _, t := range typen {
-				lt := strings.ToLower(t)
-				if lt == "organization" || lt == "corporation" || strings.HasSuffix(lt, "business") || lokaleTypen[lt] {
+				if organisatieType(t) {
 					x.org.gevonden = true
 					x.org.typen = append(x.org.typen, t)
-					if strings.HasSuffix(lt, "business") || lokaleTypen[lt] {
+					if lokaalType(t) {
 						x.org.lokaal = true
 					}
 					if _, ok := o["name"]; ok {
@@ -333,11 +332,6 @@ func leesJSONLD(s string, x *paginaExtra) {
 	}
 	loop(v)
 }
-
-var lokaleTypen = map[string]bool{"store": true, "restaurant": true, "professionalservice": true, "onlinestore": true,
-	"medicalbusiness": true, "legalservice": true, "dentist": true, "bakery": true, "cafeorcoffeeshop": true,
-	"autorepair": true, "hairsalon": true, "beautysalon": true, "plumber": true, "electrician": true,
-	"realestateagent": true, "accountingservice": true, "lodgingbusiness": true, "hotel": true}
 
 func jsonTypen(v any) []string {
 	switch t := v.(type) {

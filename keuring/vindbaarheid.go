@@ -412,9 +412,8 @@ func geoLLMS(w *web) Punt {
 }
 
 func geoEntiteit(w *web) Punt {
-	t := strings.ToLower(strings.Join(w.info.schemaTypen, " "))
-	for _, soort := range []string{"organization", "localbusiness", "store", "restaurant", "professionalservice", "corporation", "person", "onlinestore", "medicalbusiness", "legalservice"} {
-		if strings.Contains(t, soort) {
+	for _, soort := range w.info.schemaTypen {
+		if organisatieType(soort) || kaalType(soort) == "person" {
 			return punt("geo-entiteit", "schema.org", Goed, "Duidelijk wie je bent",
 				"Je site vertelt in gestructureerde vorm wie er achter zit. AI-assistenten en Google kunnen je bedrijf zo goed herkennen en beschrijven.").met("Gevonden: " + kort(strings.Join(uniek(w.info.schemaTypen), ", "), 120))
 		}
