@@ -10,8 +10,9 @@ import (
 	"github.com/miekg/dns"
 )
 
-// Resolver stelt DNS-vragen aan een validerende resolver. Op de server is dat
-// een eigen unbound op 127.0.0.1; bij het ontwikkelen kan het een publieke zijn.
+// Resolver stelt DNS-vragen aan een validerende resolver. De dienst gebruikt
+// standaard 127.0.0.1:53, dus een eigen resolver op dezelfde machine; bij het
+// ontwikkelen kan het een publieke zijn.
 // Een validerende resolver is nodig voor DNSSEC: alleen die zet de AD-vlag.
 type Resolver struct {
 	Servers []string // host:poort

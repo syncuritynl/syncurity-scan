@@ -1,11 +1,12 @@
 package main
 
-// De interne API voor de inlogdienst (syncurity-auth), op een eigen socket
-// in /run/syncurity-keuring-intern/ met groep syncurity-intern. nginx kent
-// die socket niet en kan er niet bij: een fout in nginx maakt zo nooit een
-// volledig rapport van een willekeurig domein publiek. Geen remmen per
-// adres (dat doet de inlogdienst), wel hooguit 2 volledige rapporten
-// tegelijk. Zie ontwerp/volledig-rapport.md.
+// De interne API voor de inlogdienst, op een eigen unix socket (vlag
+// -intern) die alleen de inlogdienst kan openen. De reverse proxy voor de
+// publieke kant kent die socket niet en kan er niet bij: een fout daar maakt
+// zo nooit een volledig rapport van een willekeurig domein publiek. Geen
+// remmen per adres (dat doet de inlogdienst), wel hooguit 2 volledige
+// rapporten tegelijk. Het volledige rapport komt er pas na domeinbewijs: het
+// TXT-record dat ControleerTXT zoekt.
 
 import (
 	"context"

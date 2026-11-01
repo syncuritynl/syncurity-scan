@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bouwt de scandienst voor een Linux-server op ARM64 (statisch, zonder C).
+# Bouwt de scandienst voor Linux op ARM64 (statisch, zonder C).
 # Weigert te bouwen met werk dat niet is vastgelegd, of als govulncheck iets vindt.
 # Uitkomst: ./syncurity-keuring-<versie> en de sha256 ervan.
 set -euo pipefail

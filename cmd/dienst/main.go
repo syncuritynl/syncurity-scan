@@ -1,12 +1,13 @@
-// syncurity-keuring: de gratis domeinscan achter nginx (/scan). De dienst
-// heet intern nog keuring; voor bezoekers heet alles scan.
+// syncurity-keuring: de gratis domeinscan (/scan), achter een reverse proxy.
+// De dienst heet in de code nog keuring; voor bezoekers heet alles scan.
 //
 // Ontwerpuitgangspunten:
-//   - luistert op een unix socket, nginx staat ervoor; geen netwerkpoort
+//   - luistert op een unix socket met een reverse proxy ervoor; geen netwerkpoort
 //   - doet zelf alleen uitgaande verbindingen, naar publieke adressen op 80 en
-//     443 (Kiezer) en naar de eigen resolver; systemd dwingt dat ook af
+//     443 (Kiezer) en naar de eigen resolver; de procesbeheerder kan dat ook
+//     afdwingen
 //   - geen database: uitslagen staan 15 minuten in het geheugen, daarna weg
-//   - logt geen IP-adressen; nginx doet dat al, en fail2ban kijkt daar
+//   - logt geen IP-adressen; dat is aan de reverse proxy
 //   - toont op /scan alleen de gratis uitslag (Uitslag.Openbaar); het
 //     volledige rapport verlaat deze dienst alleen via de interne socket voor
 //     de inlogdienst, en pas na domeinbewijs (intern.go)
@@ -52,7 +53,7 @@ const (
 var amsterdam, _ = time.LoadLocation("Europe/Amsterdam")
 
 // versie wordt bij het bouwen gezet met -ldflags "-X main.versie=..." (zie bouw.sh),
-// zodat na een incident te zeggen is welke commit er draaide (A.8.32).
+// zodat na een incident te zeggen is welke commit er draaide.
 var versie = "onbekend"
 
 var maanden = [...]string{"januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"}
@@ -218,8 +219,8 @@ func (d *dienst) voerUit(ctx context.Context, domein, ip string) (*keuring.Uitsl
 		// eigenaar, na domeinbewijs via de interne socket. Keur geeft ze al
 		// niet, maar dit is de plek waar het zeker moet.
 		u = u.Openbaar()
-		// Geen domeinnaam en geen IP in het logboek: nginx houdt het opgevraagde
-		// adres al 14 dagen bij voor de beveiliging (zie /privacy/).
+		// Geen domeinnaam en geen IP in het logboek: het opgevraagde adres
+		// staat al in het logboek van de reverse proxy (zie /privacy/).
 		log.Printf("scan klaar %d/%d %.1fs", u.InOrde, u.Totaal, u.Duur.Seconds())
 	}
 	return u, err
@@ -274,7 +275,7 @@ func eigenHerkomst(r *http.Request) bool {
 	return false
 }
 
-// bezoeker is het adres dat nginx doorgeeft. Te vertrouwen omdat de dienst
+// bezoeker is het adres dat de reverse proxy doorgeeft. Te vertrouwen omdat de dienst
 // alleen via de unix socket bereikbaar is.
 // soortFout vat een fout samen zonder namen of adressen erin.
 func soortFout(err error) string {
@@ -478,7 +479,7 @@ func stuurPDF(w http.ResponseWriter, r *http.Request, u *keuring.Uitslag) {
 	_, _ = w.Write(b)
 }
 
-// routes is de publieke kant, achter nginx. /intern/ bestaat hier niet: dat
+// routes is de publieke kant, achter de reverse proxy. /intern/ bestaat hier niet: dat
 // staat alleen op de interne socket (intern.go).
 func (d *dienst) routes() http.Handler {
 	mux := http.NewServeMux()
@@ -489,7 +490,8 @@ func (d *dienst) routes() http.Handler {
 	mux.HandleFunc("/keuring", d.start)
 	mux.HandleFunc("/keuring/", func(w http.ResponseWriter, r *http.Request) {
 		// Alleen naar een geldige domeinnaam: een pad als /\\evil.com zou
-		// anders een open redirect zijn, als nginx er ooit niet voor staat.
+		// anders een open redirect zijn, als de reverse proxy er ooit niet
+		// voor staat.
 		dom, err := keuring.Normaliseer(strings.TrimPrefix(r.URL.Path, "/keuring/"))
 		if err != nil {
 			http.Redirect(w, r, "/scan", http.StatusMovedPermanently)
@@ -504,10 +506,10 @@ func main() {
 	sock := flag.String("socket", "/run/syncurity-keuring/keuring.sock", "pad van de unix socket")
 	resolvers := flag.String("resolver", "127.0.0.1:53", "validerende resolvers, komma-gescheiden")
 	tcp := flag.String("tcp", "", "alleen om te testen: luister op dit TCP-adres in plaats van de socket")
-	intern := flag.String("intern", "", "pad van de interne socket voor de inlogdienst, bijv. /run/syncurity-keuring-intern/intern.sock (leeg: uit)")
+	intern := flag.String("intern", "", "pad van de interne socket voor de inlogdienst, bijv. /run/keuring-intern/intern.sock (leeg: uit)")
 	tcpIntern := flag.String("tcp-intern", "", "alleen om te testen: de interne API op dit TCP-adres")
 	flag.Parse()
-	log.SetFlags(0) // journald zet zelf de tijd erbij
+	log.SetFlags(0) // het logboek van de procesbeheerder zet zelf de tijd erbij
 
 	in := keuring.Standaard
 	in.Resolvers = strings.Split(*resolvers, ",")
@@ -522,14 +524,15 @@ func main() {
 		MaxHeaderBytes:    16 << 10,
 	}
 
-	// De publieke socket: nginx (www-data) moet erbij kunnen, verder niemand.
+	// De publieke socket: alleen de reverse proxy moet erbij kunnen (via de
+	// groep, rechten 0660), verder niemand.
 	ln, err := luister(*tcp, *sock)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if *intern != "" || *tcpIntern != "" {
-		// De interne socket: alleen de groep syncurity-intern (de map
-		// regelt systemd, met setgid). Een volledig rapport duurt tot 90 s.
+		// De interne socket: alleen de groep van de inlogdienst (de map en
+		// de groep regelt de procesbeheerder). Een volledig rapport duurt tot 90 s.
 		iln, err := luister(*tcpIntern, *intern)
 		if err != nil {
 			log.Fatal(err)

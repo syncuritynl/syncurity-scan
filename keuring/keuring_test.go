@@ -46,7 +46,7 @@ func TestNormaliseer(t *testing.T) {
 // Deze adressen mogen nooit benaderd worden, wat een domein er ook naar laat wijzen.
 func TestPubliek(t *testing.T) {
 	nooit := []string{
-		"127.0.0.1", "10.0.0.16", "192.168.0.10", "172.16.0.1", "169.254.169.254",
+		"127.0.0.1", "10.20.30.40", "192.168.0.10", "172.16.0.1", "169.254.169.254",
 		"100.64.0.1", "0.0.0.0", "255.255.255.255", "224.0.0.1",
 		"::1", "fe80::1", "fd00:c1::a9fe:a9fe", "fddb:1063::1", "::ffff:127.0.0.1", "2001:db8::1",
 	}
@@ -55,7 +55,7 @@ func TestPubliek(t *testing.T) {
 			t.Errorf("%s geldt als publiek, dat mag niet", s)
 		}
 	}
-	for _, s := range []string{"92.5.232.178", "1.1.1.1", "2603:c022:c00b:2000::80"} {
+	for _, s := range []string{"9.9.9.9", "1.1.1.1", "2620:fe::fe"} {
 		if !Publiek(netip.MustParseAddr(s)) {
 			t.Errorf("%s geldt niet als publiek", s)
 		}
@@ -164,7 +164,7 @@ func TestPubliekSpeciaal(t *testing.T) {
 			t.Errorf("%s hoort niet publiek te zijn", s)
 		}
 	}
-	if !Publiek(netip.MustParseAddr("2a00:1450:4001::1")) || !Publiek(netip.MustParseAddr("92.5.232.178")) {
+	if !Publiek(netip.MustParseAddr("2a00:1450:4001::1")) || !Publiek(netip.MustParseAddr("9.9.9.9")) {
 		t.Error("een gewoon publiek adres wordt geweigerd")
 	}
 }
@@ -198,8 +198,8 @@ func TestSchoon(t *testing.T) {
 	}
 }
 
-// H-1 van de audit van 30-10: met x/net v0.30.0 kostte 512 KiB geneste divs
-// meer dan een minuut. Een homepage van 2 MiB moet ruim binnen de tijd blijven.
+// Regressietest: met x/net v0.30.0 kostte 512 KiB geneste divs meer dan een
+// minuut. Een homepage van 2 MiB moet ruim binnen de tijd blijven.
 func TestOntleedSnel(t *testing.T) {
 	for _, stuk := range []string{"<div>", "<a>", "<table><tr><td>", "<b><i>"} {
 		body := []byte(strings.Repeat(stuk, (2<<20)/len(stuk)))

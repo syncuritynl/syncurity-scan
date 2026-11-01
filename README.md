@@ -31,7 +31,7 @@ De scan is **passief**. Hij kijkt alleen naar wat iedereen op internet kan zien:
 |---|---|
 | `keuring/` | de scanner: alle controles, de uitslag en de oplossingen per punt |
 | `cmd/keur/` | de scan vanaf de opdrachtregel |
-| `cmd/dienst/` | de webdienst achter nginx: de scanpagina, het rapport en de pdf |
+| `cmd/dienst/` | de webdienst (achter een reverse proxy): de scanpagina, het rapport en de pdf |
 | `pdf/` | een klein pdf-pakket zonder afhankelijkheden |
 
 Het portaal van syncurity.nl (inloggen en domeinbewijs) hoort hier niet bij.

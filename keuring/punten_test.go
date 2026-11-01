@@ -113,7 +113,7 @@ func TestSPFFouten(t *testing.T) {
 }
 
 func TestStsMX(t *testing.T) {
-	mx := []string{"syncurity-nl.mail.protection.outlook.com"}
+	mx := []string{"voorbeeld-nl.mail.protection.outlook.com"}
 	if p := stsMX(mx, "enforce", []string{"*.mail.protection.outlook.com"}); p.Status != Goed {
 		t.Errorf("wildcard: %s", p.Status)
 	}
