@@ -443,14 +443,36 @@ func (d *dienst) rapport(w http.ResponseWriter, r *http.Request) {
 // GitHub te vinden is (een schone build, zie bouw.sh). Onder elk rapport staat
 // een link naar precies die code; met dezelfde commit bouwt iedereen hetzelfde
 // programma na. Een build met niet vastgelegd werk ("-dirty") krijgt geen link.
+//
+// Behalve een kale commit ("15a2f51") werkt ook de uitvoer van git describe:
+// "v1.2.0-3-g15a2f51" (of met --long "v1.2.0-0-g15a2f51") geeft de commit
+// erachter, en een build precies op een tag ("v1.2.0") de tag zelf. Al het
+// andere, ook "onbekend", geeft "".
 func openbareVersie() string {
-	if commitVorm.MatchString(versie) {
-		return versie
+	return versieVoorLink(versie)
+}
+
+func versieVoorLink(v string) string {
+	if strings.HasSuffix(v, "-dirty") {
+		return ""
+	}
+	if commitVorm.MatchString(v) || tagVorm.MatchString(v) {
+		return v
+	}
+	if m := describeVorm.FindStringSubmatch(v); m != nil {
+		return m[1]
 	}
 	return ""
 }
 
-var commitVorm = regexp.MustCompile(`^[0-9a-f]{7,40}$`)
+var (
+	commitVorm = regexp.MustCompile(`^[0-9a-f]{7,40}$`)
+	// Alleen nette versietags: die zijn veilig in een adres en GitHub kent
+	// ze als /tree/<tag>.
+	tagVorm = regexp.MustCompile(`^v[0-9]+(\.[0-9]+){0,2}$`)
+	// <tag>-<aantal commits erna>-g<commit>; de tag zelf doet er niet toe.
+	describeVorm = regexp.MustCompile(`^.+-[0-9]+-g([0-9a-f]{7,40})$`)
+)
 
 // pdfAdres is de link achter de downloadknop; een ingevuld subdomein gaat mee,
 // zodat de pdf dezelfde opmerking heeft als de pagina.

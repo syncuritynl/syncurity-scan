@@ -51,8 +51,9 @@ bedoeld voor je eigen domein.
 
 ## Na te bouwen
 
-Onder elk rapport op syncurity.nl staat met welke versie het gemaakt is. Met
-dezelfde commit en dezelfde Go-versie bouw je precies hetzelfde programma:
+Onder elk rapport op syncurity.nl staat met welke versie het gemaakt is: de
+commit, precies zoals die daar staat (`<commit>` hieronder). Met dezelfde
+commit en dezelfde Go-versie bouw je precies hetzelfde programma:
 
 ```
 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath \

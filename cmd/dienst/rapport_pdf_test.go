@@ -112,23 +112,74 @@ func TestPDFVoorbeeld(t *testing.T) {
 }
 
 // Onder het rapport staat de versie met een link naar de code, maar alleen
-// bij een schone build.
+// bij een schone build. Ook met een tag of git describe blijft de link werken.
 func TestVersieOnderRapport(t *testing.T) {
 	oud := versie
 	defer func() { versie = oud }()
 	d := nieuweDienst(keuring.Instellingen{})
 	u := voorbeeldUitslag()
 	d.uitslag[u.Domein] = bewaard{u: u, tot: time.Now().Add(time.Minute)}
+	const code = `href="https://github.com/syncuritynl/syncurity-scan/tree/`
 	for _, tc := range []struct {
 		versie string
-		link   bool
-	}{{"15a2f51", true}, {"15a2f51-dirty", false}, {"onbekend", false}} {
+		link   string // "" = geen link
+	}{
+		{"15a2f51", "15a2f51"},
+		{"15a2f51c0ffe", "15a2f51c0ffe"},
+		{"v1.2.0-3-g15a2f51", "15a2f51"},
+		{"v1.2.0", "v1.2.0"},
+		{"15a2f51-dirty", ""},
+		{"v1.2.0-3-g15a2f51-dirty", ""},
+		{"onbekend", ""},
+	} {
 		versie = tc.versie
 		rec := httptest.NewRecorder()
 		d.routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/scan/voorbeeld.nl", nil))
-		heeft := bytes.Contains(rec.Body.Bytes(), []byte(`href="https://github.com/syncuritynl/syncurity-scan/tree/`+tc.versie+`"`))
-		if heeft != tc.link {
-			t.Errorf("versie %q: link %v, verwacht %v", tc.versie, heeft, tc.link)
+		body := rec.Body.Bytes()
+		if tc.link == "" {
+			if bytes.Contains(body, []byte(code)) {
+				t.Errorf("versie %q: link onder het rapport, verwacht geen", tc.versie)
+			}
+			continue
+		}
+		if !bytes.Contains(body, []byte(code+tc.link+`"`)) {
+			t.Errorf("versie %q: geen link naar %s", tc.versie, tc.link)
+		}
+		if p := maakPDF(u.Openbaar(), ""); !bytes.Contains(p, []byte("versie "+tc.link)) {
+			t.Errorf("versie %q: de pdf noemt %s niet", tc.versie, tc.link)
+		}
+	}
+}
+
+// versieVoorLink geeft alleen iets terug dat als commit of nette tag in een
+// adres op GitHub past; al het andere geeft "".
+func TestVersieVoorLink(t *testing.T) {
+	for in, wil := range map[string]string{
+		"15a2f51":                                "15a2f51",
+		"15a2f51c0ffee15a2f51c0ffee15a2f51c0ffe": "15a2f51c0ffee15a2f51c0ffee15a2f51c0ffe",
+		"v1.2.0-3-g15a2f51":                      "15a2f51",
+		"v1.2.0-0-g15a2f51":                      "15a2f51", // git describe --long op de tag zelf
+		"v1.2-3-gabc1234":                        "abc1234",
+		"release-2026-11-12-gabc1234":            "abc1234", // tag met streepjes en cijfers
+		"v1.2.0":                                 "v1.2.0",
+		"v1":                                     "v1",
+		"15a2f51-dirty":                          "",
+		"v1.2.0-dirty":                           "",
+		"v1.2-3-gabc1234-dirty":                  "",
+		"onbekend":                               "",
+		"":                                       "",
+		"15A2F51":                                "", // git geeft kleine letters
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": "", // te lang
+		"15a2f5":                 "", // te kort
+		"v1.2.0-3-g15a2f5":       "", // te kort
+		"v1.2.0-rc1":             "", // geen nette tag
+		"v1.2.0-3-g15a2f51/../x": "", // niets achter de commit
+		"v1.2.0/../../x":         "",
+		"<script>":               "",
+		"15a2f51\n":              "",
+	} {
+		if g := versieVoorLink(in); g != wil {
+			t.Errorf("versieVoorLink(%q) = %q, wil %q", in, g, wil)
 		}
 	}
 }

@@ -5,7 +5,9 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 [ -z "$(git status --porcelain)" ] || { echo "niet vastgelegd werk: eerst committen" >&2; exit 1; }
-VERSIE=$(git describe --always --dirty)
+# De versie is altijd de commit (12 tekens), los van tags: die staat onder elk
+# rapport met een link naar de code, en is nodig om het programma na te bouwen.
+VERSIE=$(git rev-parse --short=12 HEAD)
 go vet ./...
 go test ./...
 "${GOVULNCHECK:-$HOME/go/bin/govulncheck}" ./...
