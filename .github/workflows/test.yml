@@ -1,11 +1,11 @@
-# Bij elke wijziging: vet, tests, staticcheck en govulncheck. Acties en
+# Bij elke wijziging, op elke tak: vet, tests, staticcheck en govulncheck. main
+# neemt alleen commits aan waarvoor deze test al geslaagd is. Acties en
 # hulpmiddelen staan op een vaste versie, zodat niemand ze ongemerkt kan
 # veranderen. De tests gebruiken geen netwerk, behalve govulncheck (de
 # lekkendatabank van Go).
 name: test
 on:
   push:
-    branches: [main]
   pull_request:
 permissions:
   contents: read
