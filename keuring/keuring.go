@@ -37,7 +37,8 @@ type keurder struct {
 	eenStap *http.Client // volgt geen doorverwijzingen
 	vrij    *http.Client // volgt https-doorverwijzingen naar elk domein
 	timeout time.Duration
-	vol     bool // volledige keuring: een paar extra metingen voor de details
+	ua      string // dezelfde User-Agent als in de http-clients
+	vol     bool   // volledige keuring: een paar extra metingen voor de details
 
 	w     *web // wat we van de website haalden, voor de voorstellen
 	mu    sync.Mutex
@@ -105,8 +106,9 @@ func bestaat(ctx context.Context, r *Resolver, domein string) error {
 // keur doet het werk. vol: de volledige keuring, met een paar extra
 // handdrukken om de zwakke versleuteling precies te benoemen.
 func keur(ctx context.Context, domein string, r *Resolver, in Instellingen, vol bool) (*Uitslag, *keurder) {
-	// Een scan doet zo'n 25 verbindingen; 60 laat ruimte voor een tweede
-	// adres, en houdt misbruik als verkeersversterker klein. De volledige
+	// Een scan doet zo'n 30 verbindingen (waarvan hooguit 4 om elk adres van
+	// de website apart te meten); 60 laat ruimte voor een tweede adres, en
+	// houdt misbruik als verkeersversterker klein. De volledige
 	// keuring meet zwakke suites één voor één (hooguit 13 handdrukken extra),
 	// en mag daarom 80. De subdomeinen hebben een eigen budget (subdomein.go).
 	budget := int32(60)
@@ -131,6 +133,7 @@ func keur(ctx context.Context, domein string, r *Resolver, in Instellingen, vol 
 		vrij:    &http.Client{Transport: rt, Timeout: 2 * in.Timeout, CheckRedirect: naarSecurityTxt},
 		eenStap: &http.Client{Transport: rt, Timeout: in.Timeout, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }},
 		timeout: in.Timeout,
+		ua:      in.UserAgent,
 		vol:     vol,
 	}
 

@@ -39,7 +39,7 @@ func (k *keurder) webIPv6(ctx context.Context, host string) Punt {
 			return punt("ipv6-web", "AAAA", Goed, "Website bereikbaar via IPv6",
 				"Ook bezoekers met het nieuwe internetadres komen rechtstreeks binnen.").met(gezien)
 		}
-		if errors.Is(err, syscall.ENETUNREACH) || strings.Contains(err.Error(), "network is unreachable") {
+		if geenRoute(err) {
 			return punt("ipv6-web", "AAAA", Goed, "Website bereikbaar via IPv6",
 				"Je website heeft een IPv6-adres.").met(gezien)
 		}
@@ -47,6 +47,12 @@ func (k *keurder) webIPv6(ctx context.Context, host string) Punt {
 	return punt("ipv6-web", "AAAA", Slecht, "Website niet bereikbaar via IPv6",
 		"Je website heeft een IPv6-adres, maar daarop antwoordt niets. Bezoekers met IPv6 kunnen tegen een trage of lege pagina aanlopen.").met(gezien).
 		metDetail("Geen verbinding op poort 443 met: "+gezien, "Controleer of de webserver ook op IPv6 luistert en of de firewall IPv6 doorlaat.")
+}
+
+// geenRoute: de scanner zelf kan het adres niet bereiken, meestal omdat hij
+// geen IPv6 heeft. Dat zegt niets over de site.
+func geenRoute(err error) bool {
+	return err != nil && (errors.Is(err, syscall.ENETUNREACH) || strings.Contains(err.Error(), "network is unreachable"))
 }
 
 func (k *keurder) mailIPv6(ctx context.Context) Punt {

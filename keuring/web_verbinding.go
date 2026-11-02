@@ -41,11 +41,12 @@ func (k *keurder) verbinding(w *web) Groep {
 			k.https(w),
 			punt("hsts", "HSTS", Fout, "De browser onthoudt https", "Zonder https niet te meten."),
 			certWWW(w),
+			punt("tls-adressen", "IPv4 · IPv6", Fout, "Elk adres even veilig", "Zonder https niet te meten."),
 		}
 		return g
 	}
 	g.Punten = []Punt{
-		tlsModern(w), tlsOud(w), suites(w), certificaat(w), certSleutel(w), k.https(w), hsts(w), certWWW(w),
+		tlsModern(w), tlsOud(w), suites(w), certificaat(w), certSleutel(w), k.https(w), hsts(w), certWWW(w), tlsAdressen(w),
 	}
 	return g
 }

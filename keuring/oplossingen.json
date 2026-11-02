@@ -953,6 +953,25 @@
       ]
     }
   },
+  "tls-adressen": {
+    "slecht": {
+      "wie": "je hostingpartij of je webbouwer",
+      "stappen": [
+        "Kijk bij dit punt op welke adressen (IPv4 en IPv6) de verbinding mislukt of het certificaat niet klopt.",
+        "Laat je hostingpartij zorgen dat op elk adres dezelfde webserver draait, met hetzelfde geldige certificaat.",
+        "Wordt een adres niet meer gebruikt, haal het dan weg uit je DNS-instellingen (het A- of AAAA-record).",
+        "Laat de scan daarna opnieuw draaien en controleer dat elk adres hetzelfde antwoordt."
+      ]
+    },
+    "matig": {
+      "wie": "je hostingpartij of je webbouwer",
+      "stappen": [
+        "Leg de adressen bij dit punt naast elkaar: welk certificaat, welke versie van de versleuteling en welk antwoord op de homepage.",
+        "Zet op elk adres dezelfde instellingen, zodat iedere bezoeker dezelfde site krijgt.",
+        "Draait er op een adres nog een oude server, zet die dan uit of haal het adres uit je DNS-instellingen."
+      ]
+    }
+  },
   "software": {
     "alle": {
       "wie": "je webbouwer of jijzelf",

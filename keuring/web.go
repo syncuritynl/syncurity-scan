@@ -50,8 +50,9 @@ type web struct {
 	andereAdres bool                 // de andere variant (met of zonder www) heeft een adres
 	andereStaat *tls.ConnectionState // handdruk met die naam, om het certificaat te controleren
 	andereFout  error
-	robotsCode  int          // HTTP-status van /robots.txt
-	gewicht     []afbGewicht // grootte van de eerste afbeeldingen op het eigen domein
+	robotsCode  int           // HTTP-status van /robots.txt
+	gewicht     []afbGewicht  // grootte van de eerste afbeeldingen op het eigen domein
+	perAdres    []adresMeting // handdruk en GET / op elk adres apart (tls-adressen)
 
 	// roots: de vertrouwde basiscertificaten. nil betekent die van het
 	// systeem, zoals een browser; alleen de tests zetten hier een eigen CA.
@@ -138,6 +139,7 @@ func (k *keurder) haalWeb(ctx context.Context, host string) *web {
 	if k.vol {
 		w.suitesAlle = k.alleSuites(ctx, host, w.zwak != "", w.verouder != "")
 	}
+	w.perAdres = k.meetAdressen(ctx, host)
 
 	if req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+host+"/", nil); err == nil {
 		begin := time.Now()
