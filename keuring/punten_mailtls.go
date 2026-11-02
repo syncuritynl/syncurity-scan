@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"syscall"
 )
 
 // De punten uit de STARTTLS-meting (mailtls.go).
@@ -19,18 +20,40 @@ func mailNietTeMeten(id, tech, titel string, ms []mxMeting, err error) (Punt, []
 	}
 	var gemeten []mxMeting
 	var detail []string
+	geweigerd, alleenV4 := false, true
 	for _, m := range ms {
 		if m.fout != nil {
-			detail = append(detail, fmt.Sprintf("%s (%s): %v", m.naam, m.adres, m.fout))
+			if m.adres.IsValid() {
+				detail = append(detail, fmt.Sprintf("%s (%s): %v", m.naam, m.adres, m.fout))
+			} else {
+				detail = append(detail, fmt.Sprintf("%s: %v", m.naam, m.fout))
+			}
+			geweigerd = geweigerd || weigering(m.fout)
+			alleenV4 = alleenV4 && m.alleenV4
 			continue
 		}
 		gemeten = append(gemeten, m)
 	}
-	if len(gemeten) == 0 {
+	switch {
+	case len(gemeten) > 0:
+	case geweigerd:
 		return punt(id, tech, Fout, titel,
-			"Niet te meten vanaf onze server: je mailserver gaf geen antwoord op poort 25. Veel providers weigeren verbindingen vanuit datacenters; dat zegt niets over je mail.").metDetail(detail...), nil, true
+			"Niet te meten vanaf onze server: je mailserver weigerde onze verbinding. Veel providers weigeren verbindingen vanuit datacenters; dat zegt niets over je mail.").metDetail(detail...), nil, true
+	case alleenV4:
+		return punt(id, tech, Fout, titel,
+			"We konden je mailserver vanaf onze scanserver niet bereiken (alleen via IPv4), dus dit is niet gemeten. Dat zegt niets over je mail.").metDetail(detail...), nil, true
+	default:
+		return punt(id, tech, Fout, titel,
+			"We konden je mailserver vanaf onze scanserver niet bereiken, dus dit is niet gemeten. Dat zegt niets over je mail.").metDetail(detail...), nil, true
 	}
 	return Punt{}, gemeten, false
+}
+
+// weigering: de mailserver zelf zei nee (verbinding geweigerd, of een
+// foutcode of onzin in plaats van de begroeting). Een time-out of geen
+// route is geen weigering: dan kwamen we er niet bij.
+func weigering(err error) bool {
+	return errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, errSMTP)
 }
 
 func starttlsPunt(ms []mxMeting, err error, leverancier string) Punt {

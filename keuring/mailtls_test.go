@@ -8,9 +8,12 @@ import (
 	"errors"
 	"net"
 	"net/netip"
+	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -118,11 +121,11 @@ func TestMeetMX(t *testing.T) {
 				t.Errorf("%s: dial naar %s %s", tc.naam, naam, a)
 			}
 			if tc.dicht {
-				return nil, errors.New("connection refused")
+				return nil, &net.OpError{Op: "dial", Net: "tcp", Err: os.NewSyscallError("connect", syscall.ECONNREFUSED)}
 			}
 			return net.Dial("tcp", adres)
 		}
-		m := meetMX(context.Background(), "mx.voorbeeld.nl", netip.MustParseAddr("192.0.2.25"), dial, "scan.voorbeeld.nl")
+		m := meetMX(context.Background(), "mx.voorbeeld.nl", []netip.Addr{netip.MustParseAddr("192.0.2.25")}, dial, "scan.voorbeeld.nl")
 		ms := []mxMeting{m}
 		s, c := starttlsPunt(ms, nil, "Eigen server"), mxCert(ms, nil, ca.pool)
 		if s.Status != tc.starttls || c.Status != tc.cert {
@@ -233,5 +236,71 @@ func TestDANEMX(t *testing.T) {
 	}
 	if r := daneMX("mx.voorbeeld.nl", record(ander), nil); r != "" {
 		t.Errorf("niet gemeten: %q", r)
+	}
+}
+
+// time-out: een fout zoals een verbinding die vastloopt.
+type timeOut struct{}
+
+func (timeOut) Error() string   { return "dial tcp: i/o timeout" }
+func (timeOut) Timeout() bool   { return true }
+func (timeOut) Temporary() bool { return true }
+
+// Poort 25: eerst IPv6, dan IPv4. Loopt IPv4 vast, dan onthouden we dat een
+// kwartier, en zegt het rapport niet dat de mailserver ons weigert.
+func TestPoort25Adressen(t *testing.T) {
+	resetV4 := func() { v4poort25.Lock(); v4poort25.dichtTot = time.Time{}; v4poort25.Unlock() }
+	resetV4()
+	t.Cleanup(resetV4)
+	ca := nieuweCA(t)
+	mx := &nepMX{starttls: true, cfg: &tls.Config{Certificates: []tls.Certificate{ca.blad(t, time.Now().Add(time.Hour), "mx.voorbeeld.nl")}, MinVersion: tls.VersionTLS12,
+		CipherSuites: []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256}}}
+	server := mx.start(t)
+	v4, v6 := netip.MustParseAddr("192.0.2.25"), netip.MustParseAddr("2001:db8::25")
+	var mu sync.Mutex
+	var gebeld []string
+	nep := func(fout map[netip.Addr]error) smtpDialer {
+		return func(_ context.Context, _ string, a netip.Addr) (net.Conn, error) {
+			mu.Lock()
+			gebeld = append(gebeld, a.String())
+			mu.Unlock()
+			if err := fout[a]; err != nil {
+				return nil, err
+			}
+			return net.Dial("tcp", server)
+		}
+	}
+	geenRoute6 := &net.OpError{Op: "dial", Net: "tcp", Err: os.NewSyscallError("connect", syscall.ENETUNREACH)}
+
+	for _, tc := range []struct {
+		naam     string
+		adressen []netip.Addr
+		fout     map[netip.Addr]error
+		wil      Status
+		gebeld   string
+		tekst    string
+	}{
+		{"IPv6 eerst", kiesAdressen([]netip.Addr{v4}, []netip.Addr{v6}), nil, Goed, "2001:db8::25,2001:db8::25,2001:db8::25", ""},
+		{"geen IPv6-route: IPv4", kiesAdressen([]netip.Addr{v4}, []netip.Addr{v6}), map[netip.Addr]error{v6: geenRoute6}, Goed, "2001:db8::25,192.0.2.25,192.0.2.25,192.0.2.25", ""},
+		{"alleen IPv4, loopt vast", []netip.Addr{v4}, map[netip.Addr]error{v4: timeOut{}}, Fout, "192.0.2.25", "niet bereiken (alleen via IPv4)"},
+		{"tweede scan: IPv4 meteen overgeslagen", []netip.Addr{v4}, map[netip.Addr]error{v4: timeOut{}}, Fout, "", "niet bereiken (alleen via IPv4)"},
+		{"IPv6 werkt nog als IPv4 dicht is", kiesAdressen([]netip.Addr{v4}, []netip.Addr{v6}), nil, Goed, "2001:db8::25,2001:db8::25,2001:db8::25", ""},
+		{"IPv6 loopt vast, IPv4 dicht", kiesAdressen([]netip.Addr{v4}, []netip.Addr{v6}), map[netip.Addr]error{v6: timeOut{}}, Fout, "2001:db8::25", "niet bereiken, dus"},
+	} {
+		gebeld = nil
+		m := meetMX(context.Background(), "mx.voorbeeld.nl", tc.adressen, nep(tc.fout), "scan.voorbeeld.nl")
+		p := starttlsPunt([]mxMeting{m}, nil, "")
+		mu.Lock()
+		g := strings.Join(gebeld, ",")
+		mu.Unlock()
+		if p.Status != tc.wil || g != tc.gebeld || (tc.tekst != "" && !strings.Contains(p.Uitleg, tc.tekst)) || strings.Contains(p.Uitleg, "weigerde") {
+			t.Errorf("%s: %s %q, gebeld %q (verwacht %s, %q)", tc.naam, p.Status, p.Uitleg, g, tc.wil, tc.gebeld)
+		}
+	}
+	// Een echte weigering mag wel zo heten.
+	resetV4()
+	m := meetMX(context.Background(), "mx.voorbeeld.nl", []netip.Addr{v4}, nep(map[netip.Addr]error{v4: &net.OpError{Op: "dial", Net: "tcp", Err: os.NewSyscallError("connect", syscall.ECONNREFUSED)}}), "scan.voorbeeld.nl")
+	if p := starttlsPunt([]mxMeting{m}, nil, ""); !strings.Contains(p.Uitleg, "weigerde onze verbinding") {
+		t.Errorf("weigering: %q", p.Uitleg)
 	}
 }

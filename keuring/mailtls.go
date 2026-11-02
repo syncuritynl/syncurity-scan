@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,8 +21,8 @@ import (
 // begroeting lezen, EHLO, kijken of STARTTLS wordt aangeboden, STARTTLS, de
 // TLS-handdruk, en dan QUIT. Nooit MAIL FROM, RCPT, DATA, AUTH of VRFY.
 //
-// Per scan hooguit twee mailservers (laagste voorkeur eerst), één adres elk,
-// en per mailserver drie sessies: de gewone (versie, suite, certificaat), één
+// Per scan hooguit twee mailservers (laagste voorkeur eerst), één adres elk
+// (IPv6 eerst, IPv4 als dat niet lukt), en per mailserver drie sessies: de gewone (versie, suite, certificaat), één
 // met alleen TLS 1.0 en 1.1, en één eigen proef met alleen verouderde suites
 // (tlsproef.go). De uitkomst per mailserver bewaren we 15 minuten, net zo lang als
 // een uitslag (de naam van een mailserver bevat vaak de domeinnaam), gedeeld door
@@ -138,16 +139,105 @@ type mxMeting struct {
 	oud     string // geaccepteerde versie van vóór TLS 1.2
 	zwak    string // geaccepteerde onveilige of verouderde suite
 	dhBits  int    // als dat een DHE-suite was
+
+	alleenV4 bool // de mailserver heeft geen IPv6-adres
 }
 
 type smtpDialer func(ctx context.Context, naam string, a netip.Addr) (net.Conn, error)
 
-// meetMX doet de drie sessies met één mailserver.
-func meetMX(ctx context.Context, naam string, a netip.Addr, dial smtpDialer, ehlo string) mxMeting {
-	m := mxMeting{naam: naam, adres: a}
+// Poort 25 over IPv4 kan vanaf de scanserver dicht zitten: sommige
+// hostingpartijen blokkeren uitgaand verkeer op poort 25 over IPv4, en dan
+// loopt elke verbinding vast tot de time-out (gezien op 2-11-2026, bij alle
+// mailservers tegelijk, terwijl IPv6 gewoon werkte). Loopt een verbinding
+// over IPv4 op poort 25 één keer vast, dan slaan we IPv4 op poort 25 een
+// kwartier over, voor alle scans: anders wacht elke scan op dezelfde
+// time-out. Daarna proberen we het weer.
+var v4poort25 struct {
+	sync.Mutex
+	dichtTot time.Time
+}
+
+const v4DichtTijd = 15 * time.Minute
+
+func v4Dicht(nu time.Time) bool {
+	v4poort25.Lock()
+	defer v4poort25.Unlock()
+	return nu.Before(v4poort25.dichtTot)
+}
+
+func zetV4Dicht(nu time.Time) {
+	v4poort25.Lock()
+	defer v4poort25.Unlock()
+	v4poort25.dichtTot = nu.Add(v4DichtTijd)
+}
+
+// errOnbereikbaar: we kwamen niet bij de mailserver (time-out, geen route,
+// of IPv4 op poort 25 staat dicht vanaf onze kant). Dat ligt niet aan de
+// mailserver.
+var errOnbereikbaar = errors.New("niet bereikbaar vanaf de scanserver")
+
+func isTimeout(err error) bool {
+	var ne net.Error
+	return errors.Is(err, os.ErrDeadlineExceeded) || errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &ne) && ne.Timeout())
+}
+
+// kiesAdressen: per mailserver eerst IPv6, dan IPv4; van elk het eerste.
+func kiesAdressen(v4, v6 []netip.Addr) []netip.Addr {
+	var uit []netip.Addr
+	if len(v6) > 0 {
+		uit = append(uit, v6[0])
+	}
+	if len(v4) > 0 {
+		uit = append(uit, v4[0])
+	}
+	return uit
+}
+
+// verbind probeert de adressen op volgorde en geeft de eerste verbinding.
+// Elke poging telt mee voor maxSMTP (DialSMTP telt). IPv4 slaan we over als
+// poort 25 daar net dicht bleek.
+func verbind(ctx context.Context, naam string, adressen []netip.Addr, dial smtpDialer) (net.Conn, netip.Addr, error) {
+	var fouten []string
+	for _, a := range adressen {
+		if a.Is4() && v4Dicht(time.Now()) {
+			fouten = append(fouten, a.String()+": poort 25 over IPv4 staat vanaf onze kant dicht")
+			continue
+		}
+		c, err := dial(ctx, naam, a)
+		if err == nil {
+			return c, a, nil
+		}
+		if a.Is4() && isTimeout(err) {
+			zetV4Dicht(time.Now())
+		}
+		if !geenRoute(err) && !isTimeout(err) {
+			return nil, a, err // een echte weigering: niet nog een adres proberen
+		}
+		fouten = append(fouten, fmt.Sprintf("%s: %v", a, err))
+	}
+	return nil, netip.Addr{}, fmt.Errorf("%w (%s)", errOnbereikbaar, strings.Join(fouten, "; "))
+}
+
+// meetMX doet de drie sessies met één mailserver: de eerste op het eerste
+// adres dat antwoordt (IPv6 voor IPv4), de andere twee op datzelfde adres.
+func meetMX(ctx context.Context, naam string, adressen []netip.Addr, dial smtpDialer, ehlo string) mxMeting {
+	m := mxMeting{naam: naam, alleenV4: true}
+	for _, a := range adressen {
+		if a.Is6() {
+			m.alleenV4 = false
+		}
+	}
+	eerste := true
 	// sessie opent een verbinding en doet het gesprek tot de handdruk.
 	sessie := func() (net.Conn, bool, error) {
-		c, err := dial(ctx, naam, a)
+		var c net.Conn
+		var err error
+		if eerste {
+			eerste = false
+			c, m.adres, err = verbind(ctx, naam, adressen, dial)
+		} else {
+			c, err = dial(ctx, naam, m.adres)
+		}
 		if err != nil {
 			return nil, false, err
 		}
@@ -276,14 +366,8 @@ func (k *keurder) mailTLS(ctx context.Context) ([]mxMeting, error) {
 			close(klaar[i])
 			continue
 		}
-		v4, v6 := k.kiezer.Adressen(ctx, n)
-		var a netip.Addr
-		switch {
-		case len(v4) > 0:
-			a = v4[0] // IPv4 is vaker bereikbaar
-		case len(v6) > 0:
-			a = v6[0]
-		default:
+		a := kiesAdressen(k.kiezer.Adressen(ctx, n))
+		if len(a) == 0 {
 			uit[i] = mxMeting{naam: n, fout: errGeenAdresMX}
 			close(klaar[i])
 			continue
