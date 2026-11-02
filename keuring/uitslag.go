@@ -152,7 +152,7 @@ var uitleg = map[string]string{
 	"snel-blokkerend": "snelheid", "snel-afbeeldingen": "snelheid", "snel-extern": "snelheid",
 	"privacy": "privacy-en-kvk", "kvk": "privacy-en-kvk", "toestemming": "privacy-en-kvk",
 	// toegevoegd met de tweede reeks punten
-	"cert-www": "ssl-certificaat", "tls-adressen": "tls", "dane-web": "ssl-certificaat",
+	"cert-www": "ssl-certificaat", "tls-adressen": "tls", "tls-dh": "tls", "tls-volgorde": "tls", "tls-opties": "tls", "tls-hash": "tls", "dane-web": "ssl-certificaat",
 	"software": "verouderde-software", "bibliotheken": "verouderde-software", "php": "verouderde-software", "sri": "verouderde-software",
 	"formulieren": "mixed-content",
 	"cors":        "beveiligingsheaders", "corp-coop": "beveiligingsheaders", "permissions": "beveiligingsheaders",
@@ -180,7 +180,7 @@ var gewicht = map[string]int{
 	"seo-index": 9, "toestemming": 7, "geo-crawlers": 6, "geo-tekst": 5, "seo-mobiel": 5,
 	"seo-titel": 4, "snel-ttfb": 4, "snel-compressie": 4, "seo-beschrijving": 3,
 	"referrer": 1, "ipv6-web": 1, "ipv6-mail": 1, "ipv6-ns": 1,
-	"software": 9, "bibliotheken": 7, "php": 7, "cert-www": 7, "tls-adressen": 6, "dane-web": 6, "caa-ca": 8, "mta-sts-mx": 7, "formulieren": 7, "cors": 3,
+	"software": 9, "bibliotheken": 7, "php": 7, "cert-www": 7, "tls-adressen": 6, "tls-dh": 7, "tls-opties": 7, "tls-volgorde": 3, "tls-hash": 3, "dane-web": 6, "caa-ca": 8, "mta-sts-mx": 7, "formulieren": 7, "cors": 3,
 	"vooraf": 7, "mx-geldig": 6, "geen-mail": 5, "dmarc-sub": 4, "dmarc-extern": 3, "spf-fouten": 4,
 	"opname": 5, "ingesloten": 4, "a11y-zoom": 4, "a11y-labels": 4, "a11y-knoppen": 4, "a11y-links": 3,
 	"snel-gewicht": 4, "seo-robots": 5, "bedrijfsgegevens": 3,

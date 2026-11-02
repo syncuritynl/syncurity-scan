@@ -23,6 +23,8 @@ type web struct {
 	oud        []string       // aangeboden versies van vóór TLS 1.2
 	zwak       string         // geaccepteerde onveilige suite (RC4, 3DES), leeg als geen
 	verouder   string         // geaccepteerde verouderde suite (CBC, RSA-sleuteluitwisseling)
+	verouderID uint16         // en het nummer daarvan
+	oudeTLS    oudeTLS        // eigen TLS 1.2-proef: DH, volgorde, compressie, heronderhandeling, SHA-1
 	suitesAlle []string       // alle geaccepteerde zwakke en verouderde suites (alleen volledige keuring)
 	eerste     *http.Response // https://host/ zonder doorverwijzingen te volgen
 	httpLoc    string         // waar http://host/ naartoe stuurt
@@ -139,8 +141,9 @@ func (k *keurder) haalWeb(ctx context.Context, host string) *web {
 		w.zwak = tls.CipherSuiteName(s.CipherSuite)
 	}
 	if s, err := k.handdruk(ctx, host, &tls.Config{MinVersion: tls.VersionTLS12, MaxVersion: tls.VersionTLS12, CipherSuites: verouderd}); err == nil {
-		w.verouder = tls.CipherSuiteName(s.CipherSuite)
+		w.verouder, w.verouderID = tls.CipherSuiteName(s.CipherSuite), s.CipherSuite
 	}
+	w.oudeTLS = k.oudeTLS(ctx, w)
 	if k.vol {
 		w.suitesAlle = k.alleSuites(ctx, host, w.zwak != "", w.verouder != "")
 	}

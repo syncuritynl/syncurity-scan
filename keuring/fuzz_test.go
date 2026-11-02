@@ -1,6 +1,7 @@
 package keuring
 
 import (
+	"bytes"
 	"testing"
 	"time"
 )
@@ -43,6 +44,21 @@ func FuzzOntleed(f *testing.F) {
 		}
 		if len(p.zonderAltSrc) > maxDetail || len(p.blokkerend) > maxDetail {
 			t.Error("meer details bewaard dan nodig")
+		}
+	})
+}
+
+// Het antwoord op de TLS-proef komt van de server: geen paniek, en nooit
+// meer gelezen dan er stond.
+func FuzzTLSAntwoord(f *testing.F) {
+	f.Add(nepRecord(22, append(append(nepHello(0x009E, 0, nil, heronderExt), nepDHE(priem(1024, false), 0x0401)...), nepKlaar...)))
+	f.Add(nepRecord(22, append(append(nepHello(0xC02F, 1, nil, heronderExt), nepECDHE(0x001d, 0x0201)...), nepKlaar...)))
+	f.Add(nepRecord(21, []byte{2, 40}))
+	f.Add([]byte{22, 3, 3, 0, 4, 2, 0, 0, 0})
+	f.Fuzz(func(t *testing.T, data []byte) {
+		a, err := leesAntwoord(bytes.NewReader(data))
+		if err == nil && a.dhBits > 8*len(data) {
+			t.Errorf("p van %d bits uit %d bytes", a.dhBits, len(data))
 		}
 	})
 }

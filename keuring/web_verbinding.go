@@ -37,6 +37,10 @@ func (k *keurder) verbinding(ctx context.Context, w *web) Groep {
 			punt("tls-modern", "TLS 1.3", Slecht, "Geen versleutelde verbinding", reden, "Handdruk mislukt: "+fmt.Sprint(w.fout)),
 			punt("tls-oud", "TLS 1.0 · 1.1", Fout, "Oude versleuteling uit", "Zonder https niet te meten."),
 			punt("cipher-zwak", "cipher suites", Fout, "Sterke versleuteling", "Zonder https niet te meten."),
+			punt("tls-dh", "DHE", Fout, "Sterke sleuteluitwisseling", "Zonder https niet te meten."),
+			punt("tls-volgorde", "cipher order", Fout, "Server kiest de sterkste versleuteling", "Zonder https niet te meten."),
+			punt("tls-opties", "compressie · heronderhandeling", Fout, "Geen oude TLS-opties", "Zonder https niet te meten."),
+			punt("tls-hash", "SHA-1 · SHA-2", Fout, "Moderne handtekening bij de sleuteluitwisseling", "Zonder https niet te meten."),
 			punt("cert", "X.509", Slecht, "Geen geldig certificaat", "Bezoekers krijgen een waarschuwing dat de verbinding niet veilig is."),
 			punt("cert-sleutel", "RSA · ECDSA", Fout, "Sterk certificaat", "Zonder https niet te meten."),
 			k.https(w),
@@ -48,7 +52,7 @@ func (k *keurder) verbinding(ctx context.Context, w *web) Groep {
 		return g
 	}
 	g.Punten = []Punt{
-		tlsModern(w), tlsOud(w), suites(w), certificaat(w), certSleutel(w), k.https(w), hsts(w), certWWW(w), tlsAdressen(w), k.daneWeb(ctx, w),
+		tlsModern(w), tlsOud(w), suites(w), tlsDH(w.oudeTLS), tlsVolgorde(w.oudeTLS), tlsOpties(w.oudeTLS), tlsHash(w.oudeTLS), certificaat(w), certSleutel(w), k.https(w), hsts(w), certWWW(w), tlsAdressen(w), k.daneWeb(ctx, w),
 	}
 	return g
 }

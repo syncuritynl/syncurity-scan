@@ -9,6 +9,10 @@ type catalogusPunt struct {
 
 var nieuwePunten = []catalogusPunt{
 	{"verbinding", "cert-www", "X.509 · www", "Certificaat ook voor de naam met of zonder www"},
+	{"verbinding", "tls-dh", "DHE", "Sterke sleuteluitwisseling"},
+	{"verbinding", "tls-volgorde", "cipher order", "Server kiest de sterkste versleuteling"},
+	{"verbinding", "tls-opties", "compressie · heronderhandeling", "Geen oude TLS-opties"},
+	{"verbinding", "tls-hash", "SHA-1 · SHA-2", "Moderne handtekening bij de sleuteluitwisseling"},
 	{"verbinding", "tls-adressen", "IPv4 · IPv6", "Elk adres even veilig"},
 	{"verbinding", "dane-web", "TLSA · 443", "DANE voor de website"},
 

@@ -297,6 +297,47 @@
       ]
     }
   },
+  "tls-dh": {
+    "alle": {
+      "wie": "je webbouwer of hostingpartij",
+      "stappen": [
+        "Vraag je hostingpartij om de suites met DHE uit te zetten en alleen ECDHE te gebruiken.",
+        "Bij nginx haal je de DHE-suites uit ssl_ciphers en de regel ssl_dhparam weg; bij Apache haal je ze uit SSLCipherSuite.",
+        "Moet DHE om een bijzondere reden blijven, gebruik dan minstens een groep van 3072 bits (ffdhe3072).",
+        "Laat de scan daarna opnieuw draaien."
+      ]
+    }
+  },
+  "tls-volgorde": {
+    "matig": {
+      "wie": "je webbouwer of hostingpartij",
+      "stappen": [
+        "Vraag je hostingpartij om de server zelf de versleuteling te laten kiezen.",
+        "Bij nginx is dat ssl_prefer_server_ciphers on, bij Apache SSLHonorCipherOrder on, met de sterkste suites (ECDHE met GCM of ChaCha20) vooraan.",
+        "Nog beter: zet de verouderde suites helemaal uit, dan valt er niets meer te kiezen."
+      ]
+    }
+  },
+  "tls-opties": {
+    "slecht": {
+      "wie": "je hostingpartij",
+      "stappen": [
+        "Vraag je hostingpartij om TLS-compressie uit te zetten; moderne software doet dat standaard.",
+        "Ondersteunt de server geen veilige heronderhandeling, dan is de TLS-software erg oud: laat die bijwerken naar een ondersteunde versie.",
+        "Laat de scan daarna opnieuw draaien."
+      ]
+    }
+  },
+  "tls-hash": {
+    "matig": {
+      "wie": "je hostingpartij",
+      "stappen": [
+        "Vraag je hostingpartij om SHA-1 niet meer toe te staan voor handtekeningen bij de sleuteluitwisseling.",
+        "Bij OpenSSL gaat dat met een lijst signature algorithms zonder SHA-1, of met een strenger beveiligingsniveau (SECLEVEL).",
+        "Laat de scan daarna opnieuw draaien."
+      ]
+    }
+  },
   "cert": {
     "slecht": {
       "wie": "je webbouwer",
