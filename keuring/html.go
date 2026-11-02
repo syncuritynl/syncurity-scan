@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"regexp"
+	"slices"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -37,13 +38,17 @@ type paginaInfo struct {
 	privacyLink  bool
 	tekst        string // zichtbare tekst, ingekort
 	bronnen      []string
-	stijlen      []string    // href van elke <link rel=stylesheet>, in volgorde
-	stijlBlokken []string    // inhoud van de <style>-blokken, samen hooguit maxStijl
-	kritiek      []string    // stylesheets en scripts zonder async/defer in de head: nodig voor het eerste beeld
-	voorverbind  []string    // href van <link rel=preconnect> en rel=preload: daar is de verbinding al open
-	dnsVooraf    []string    // href van <link rel=dns-prefetch>
-	x            paginaExtra // toegankelijkheid, privacy, software (html_extra.go)
+	stijlen      []string      // href van elke <link rel=stylesheet>, in volgorde
+	stijlBlokken []string      // inhoud van de <style>-blokken, samen hooguit maxStijl
+	kritiek      []string      // stylesheets en scripts zonder async/defer in de head: nodig voor het eerste beeld
+	voorverbind  []string      // href van <link rel=preconnect> en rel=preload: daar is de verbinding al open
+	dnsVooraf    []string      // href van <link rel=dns-prefetch>
+	hreflang     []alternatief // <link rel=alternate hreflang=...>
+	x            paginaExtra   // toegankelijkheid, privacy, software (html_extra.go)
 }
+
+// alternatief: een taalversie van de pagina.
+type alternatief struct{ taal, href string }
 
 var woordRe = regexp.MustCompile(`[\p{L}\p{N}]{2,}`)
 
@@ -88,6 +93,9 @@ func ontleed(body []byte) paginaInfo {
 				rel := strings.ToLower(a["rel"])
 				if strings.Contains(rel, "canonical") {
 					p.canonical = a["href"]
+				}
+				if _, ok := a["hreflang"]; ok && slices.Contains(strings.Fields(rel), "alternate") {
+					p.hreflang = append(p.hreflang, alternatief{strings.TrimSpace(a["hreflang"]), strings.TrimSpace(a["href"])})
 				}
 				for _, r := range strings.Fields(rel) {
 					switch r {

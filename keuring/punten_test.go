@@ -69,6 +69,8 @@ func TestNieuwePuntenOpProefpagina(t *testing.T) {
 	check(snelLettertypen(w), Matig)   // Google Fonts zonder display=swap
 	check(snelVerkleind(w), NVT)       // geen eigen stylesheet
 	check(snelVoorverbinden(w), Matig) // jQuery, Google en Fonts zonder preconnect
+	check(doctypeCharset(w), Matig)    // geen charset
+	check(seoHreflang(w), NVT)
 	tracker := trackers("voorbeeld.nl", w)
 	check(vooraf(w, tracker), Matig)
 }

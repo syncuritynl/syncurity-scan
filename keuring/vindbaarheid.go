@@ -51,7 +51,7 @@ func (k *keurder) seo(w *web) Groep {
 	}
 	g.Punten = []Punt{seoTitel(w), seoBeschrijving(w), seoIndex(w), seoCanonical(w), seoSitemap(w), seoH1(w),
 		seoMobiel(w), seoTaal(w), seoSchema(w), seoDelen(w), seoAlt(w), k.seoWWW(w),
-		seoRobots(w), seoLinks(w), seoOmleidingen(w)}
+		seoRobots(w), seoLinks(w), seoOmleidingen(w), seoHreflang(w)}
 	return g
 }
 
@@ -492,7 +492,7 @@ func (k *keurder) snelheid(w *web) Groep {
 	}
 	g.Punten = []Punt{snelTTFB(w), snelGrootte(w), snelCompressie(w), snelCache(w), snelBlokkerend(w), snelAfbeeldingen(w), snelExtern(k.domein, w),
 		snelAfmetingen(w), snelLCP(w), snelBestanden(w), snelGewicht(w), snelOudeScripts(w),
-		snelLettertypen(w), snelVerkleind(w), snelVoorverbinden(w)}
+		snelLettertypen(w), snelVerkleind(w), snelVoorverbinden(w), doctypeCharset(w)}
 	return g
 }
 

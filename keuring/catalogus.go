@@ -35,6 +35,7 @@ var nieuwePunten = []catalogusPunt{
 	{"seo", "seo-robots", "robots.txt", "robots.txt in orde"},
 	{"seo", "seo-links", "<a>", "Duidelijke linkteksten"},
 	{"seo", "seo-omleidingen", "301 · 302", "Weinig doorverwijzingen"},
+	{"seo", "seo-hreflang", "hreflang", "Talen goed gekoppeld"},
 
 	{"geo", "geo-profielen", "sameAs", "Profielen gekoppeld"},
 	{"geo", "geo-versheid", "© · dateModified", "Site oogt bijgehouden"},
@@ -48,6 +49,7 @@ var nieuwePunten = []catalogusPunt{
 	{"snelheid", "snel-lettertypen", "font-display", "Tekst meteen zichtbaar"},
 	{"snelheid", "snel-verkleind", "minify", "Bestanden verkleind"},
 	{"snelheid", "snel-voorverbinden", "preconnect", "Andere servers op tijd verbonden"},
+	{"snelheid", "doctype-charset", "<!doctype> · charset", "Pagina goed aangekondigd"},
 
 	{"vertrouwen", "bedrijfsgegevens", "art. 3:15d BW", "Bedrijfsgegevens compleet"},
 	{"vertrouwen", "voorwaarden", "algemene voorwaarden", "Algemene voorwaarden te vinden"},

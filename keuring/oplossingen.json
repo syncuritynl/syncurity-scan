@@ -1180,6 +1180,17 @@
       ]
     }
   },
+  "seo-hreflang": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Geef elke taalversie een geldige taalcode, zoals nl, nl-BE of en-GB (niet en-UK), en voor de standaardversie x-default.",
+        "Gebruik bij elke taalversie het volledige adres, met https:// en je domeinnaam.",
+        "Zet ook de pagina zelf in de lijst, en doe dat op elke taalversie.",
+        "Gebruik je WordPress met een vertaalplug-in, controleer dan de instellingen voor hreflang in die plug-in."
+      ]
+    }
+  },
   "geo-profielen": {
     "alle": {
       "wie": "je webbouwer of jijzelf",
@@ -1280,6 +1291,16 @@
         "Zet voor de servers bij dit punt een regel in de head van je pagina, bijvoorbeeld <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>.",
         "Kies de drie of vier belangrijkste: te veel vooraf verbinden werkt averechts.",
         "Nog sneller: zet lettertypen en stylesheets op je eigen server, dan is er geen extra verbinding nodig."
+      ]
+    }
+  },
+  "doctype-charset": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zet <!DOCTYPE html> helemaal bovenaan elke pagina.",
+        "Zet <meta charset=\"utf-8\"> als eerste regel in de head, of laat je server Content-Type: text/html; charset=utf-8 meesturen.",
+        "Controleer daarna of de opmaak en letters als é en € nog goed zijn."
       ]
     }
   },

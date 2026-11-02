@@ -159,6 +159,7 @@ var uitleg = map[string]string{
 	"dmarc-sub": "dmarc", "dmarc-extern": "dmarc", "spf-fouten": "spf", "geen-mail": "spf",
 	"mx-geldig": "mta-sts", "mx-dnssec": "mta-sts", "mta-sts-mx": "mta-sts",
 	"caa-ca": "caa", "txt-schoon": "spf",
+	"seo-hreflang": "vindbaar-in-google", "doctype-charset": "snelheid",
 	"seo-robots": "vindbaar-in-google", "seo-links": "vindbaar-in-google", "seo-omleidingen": "vindbaar-in-google",
 	"geo-profielen": "vindbaar-voor-ai", "geo-versheid": "vindbaar-voor-ai", "geo-schema": "vindbaar-voor-ai",
 	"snel-afmetingen": "snelheid", "snel-eerste": "snelheid", "snel-onderdelen": "snelheid", "snel-gewicht": "snelheid", "snel-overbodig": "snelheid",
@@ -198,6 +199,9 @@ func (u *Uitslag) tel() {
 		u.InOrde += g.InOrde
 		u.Totaal += g.Totaal
 		g.Samen = samenvatting(g)
+		if g.ID == "snelheid" {
+			g.Samen += " " + snelheidSchatting
+		}
 		for j := range g.Punten {
 			if s, ok := uitleg[g.Punten[j].ID]; ok {
 				g.Punten[j].Meer = "/uitleg/" + s + "/"
@@ -225,6 +229,10 @@ func (u *Uitslag) tel() {
 	}
 	u.Eerst = open
 }
+
+// snelheidSchatting staat onder de groep snelheid: wij lezen de code van de
+// pagina, een browser die echt laadt meet nauwkeuriger.
+const snelheidSchatting = "Dit is een schatting uit de code van je pagina; meet het echt met PageSpeed Insights (https://pagespeed.web.dev/)."
 
 func samenvatting(g *Groep) string {
 	a, b := g.Telling()
