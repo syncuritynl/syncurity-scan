@@ -119,7 +119,7 @@ func tlsAdressen(w *web) Punt {
 		werkt++
 		certs[sha256.Sum256(m.keten[0].Raw)] = true
 		versies[m.versie] = true
-		antwoorden[fmt.Sprintf("%d %s", m.code, m.loc)] = true
+		antwoorden[fmt.Sprintf("%d %s", m.code, zonderVraag(m.loc))] = true
 	}
 	n := len(ms)
 	switch {
@@ -130,10 +130,10 @@ func tlsAdressen(w *web) Punt {
 			"Je website heeft meerdere adressen (IPv4 en IPv6, of meerdere servers). Op een deel ervan mislukt de beveiligde verbinding of klopt het certificaat niet. Een deel van je bezoekers krijgt dan een waarschuwing of een lege pagina, terwijl jij zelf misschien niets merkt.").
 			met(fmt.Sprintf("%d van de %d adressen %s niet goed", n-werkt, n, map[bool]string{true: "werkt", false: "werken"}[n-werkt == 1])).metDetail(detail...)
 	}
+	// Een ander maar geldig certificaat per adres telt niet: bij meerdere servers
+	// of een CDN is dat gewoon, bijvoorbeeld tijdens een vernieuwing, en een
+	// bezoeker merkt er niets van. Het staat wel in de details.
 	var anders []string
-	if len(certs) > 1 {
-		anders = append(anders, "certificaat")
-	}
 	if len(versies) > 1 {
 		anders = append(anders, "TLS-versie")
 	}
@@ -142,12 +142,12 @@ func tlsAdressen(w *web) Punt {
 	}
 	if len(anders) > 0 {
 		return punt(id, tech, Matig, "Niet elk adres geeft dezelfde website",
-			"Je website heeft meerdere adressen, maar die geven niet allemaal hetzelfde: een ander certificaat, een andere versie van de versleuteling of een ander antwoord. Vaak draait er op één adres nog een oude server of een vergeten instelling. internet.nl controleert dit ook (gelijke website op IPv4 en IPv6).").
+			"Je website heeft meerdere adressen, maar die geven niet allemaal hetzelfde: een andere versie van de versleuteling of een ander antwoord. Vaak draait er op één adres nog een oude server of een vergeten instelling. internet.nl controleert dit ook (gelijke website op IPv4 en IPv6).").
 			met(fmt.Sprintf("%d adressen: verschil in %s", n, enLijst(anders))).metDetail(detail...)
 	}
 	return punt(id, tech, Goed, titel,
-		"Op elk adres van je website kregen we hetzelfde certificaat, dezelfde versleuteling en hetzelfde antwoord. Iedere bezoeker krijgt dus dezelfde, beveiligde site.").
-		met(fmt.Sprintf("%d adressen: overal hetzelfde certificaat, %s en antwoord", n, tls.VersionName(ms[0].versie))).metDetail(detail...)
+		"Op elk adres van je website kregen we een geldig certificaat, dezelfde versleuteling en hetzelfde antwoord. Iedere bezoeker krijgt dus dezelfde, beveiligde site.").
+		met(fmt.Sprintf("%d adressen: overal %s, %s en hetzelfde antwoord", n, map[bool]string{true: "hetzelfde certificaat", false: "een geldig certificaat"}[len(certs) == 1], tls.VersionName(ms[0].versie))).metDetail(detail...)
 }
 
 // regel: één adres voor het volledige rapport.
@@ -176,4 +176,13 @@ func enLijst(s []string) string {
 		return strings.Join(s, "")
 	}
 	return strings.Join(s[:len(s)-1], ", ") + " en " + s[len(s)-1]
+}
+
+// zonderVraag laat de query en het anker van een Location weg: daar staat vaak
+// iets wat per verzoek verschilt, zoals een sessie of een tijdstempel.
+func zonderVraag(loc string) string {
+	if i := strings.IndexAny(loc, "?#"); i >= 0 {
+		return loc[:i]
+	}
+	return loc
 }

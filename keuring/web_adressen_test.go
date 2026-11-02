@@ -52,8 +52,8 @@ func TestTLSAdressen(t *testing.T) {
 		wil     Status
 		gezien  string
 	}{
-		{"overal gelijk", map[netip.Addr]string{a1: gewoon, a2: gewoon, a6: gewoon}, Goed, "3 adressen: overal hetzelfde certificaat, TLS 1.3 en antwoord"},
-		{"ander certificaat", map[netip.Addr]string{a1: gewoon, a6: anderCert}, Matig, "2 adressen: verschil in certificaat"},
+		{"overal gelijk", map[netip.Addr]string{a1: gewoon, a2: gewoon, a6: gewoon}, Goed, "3 adressen: overal hetzelfde certificaat, TLS 1.3 en hetzelfde antwoord"},
+		{"ander certificaat", map[netip.Addr]string{a1: gewoon, a6: anderCert}, Goed, "2 adressen: overal een geldig certificaat, TLS 1.3 en hetzelfde antwoord"},
 		{"ander antwoord", map[netip.Addr]string{a1: gewoon, a6: stuurtDoor}, Matig, "2 adressen: verschil in antwoord"},
 		{"andere versie", map[netip.Addr]string{a1: gewoon, a2: oudeTLS}, Matig, "2 adressen: verschil in TLS-versie"},
 		{"verkeerd certificaat", map[netip.Addr]string{a1: gewoon, a6: verkeerdeNaam}, Slecht, "1 van de 2 adressen werkt niet goed"},
