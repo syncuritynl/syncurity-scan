@@ -16,6 +16,9 @@ var nieuwePunten = []catalogusPunt{
 	{"instellingen", "php", "X-Powered-By", "Ondersteunde PHP-versie"},
 	{"instellingen", "sri", "integrity", "Scripts van andere sites gecontroleerd"},
 	{"instellingen", "formulieren", "form action", "Formulieren veilig verstuurd"},
+	{"instellingen", "cors", "Access-Control-Allow-Origin", "Pagina niet voor elke site leesbaar"},
+	{"instellingen", "corp-coop", "COOP · CORP", "Pagina afgeschermd van andere sites"},
+	{"instellingen", "permissions", "Permissions-Policy", "Camera en microfoon dicht"},
 
 	{"mail", "dmarc-sub", "DMARC sp", "Ook subdomeinen beschermd"},
 	{"mail", "dmarc-extern", "DMARC rua", "Rapportadres neemt je rapporten aan"},

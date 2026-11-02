@@ -48,6 +48,8 @@ type web struct {
 	stijl      string // inhoud van het eerste eigen stylesheet, hooguit maxStijl
 	stijlAdres string // waar dat stylesheet staat
 	stijlAf    bool   // het stylesheet was groter dan maxStijl
+	corsOrigin string // Access-Control-Allow-Origin op een verzoek met Origin: proefOrigin
+	corsCreds  bool   // en Access-Control-Allow-Credentials: true
 
 	// toegevoegd met de tweede reeks punten
 	andereAdres bool                 // de andere variant (met of zonder www) heeft een adres
@@ -244,12 +246,17 @@ func (w *web) haalVindbaarheid(ctx context.Context, k *keurder) {
 		}
 	}
 
-	// Compressie: br en gzip aanbieden en alleen naar de kop kijken.
+	// Compressie: br en gzip aanbieden en alleen naar de kop kijken. In
+	// hetzelfde verzoek doen we ons voor als een andere site (Origin), om te
+	// zien of de server elke site toegang geeft (cors). Geen extra verzoek.
 	if req, err := http.NewRequestWithContext(ctx, http.MethodGet, basis+"/", nil); err == nil {
 		req.Header.Set("Accept-Encoding", "br, gzip")
+		req.Header.Set("Origin", proefOrigin)
 		if r, err := k.eenStap.Do(req); err == nil {
 			r.Body.Close()
 			w.gecodeerd = strings.ToLower(r.Header.Get("Content-Encoding"))
+			w.corsOrigin = r.Header.Get("Access-Control-Allow-Origin")
+			w.corsCreds = strings.EqualFold(strings.TrimSpace(r.Header.Get("Access-Control-Allow-Credentials")), "true")
 		}
 	}
 

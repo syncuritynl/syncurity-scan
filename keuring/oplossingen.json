@@ -1021,6 +1021,36 @@
       ]
     }
   },
+  "cors": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zoek in de instellingen van je webserver of website waar Access-Control-Allow-Origin wordt gezet.",
+        "Zet daar alleen de sites in die echt toegang nodig hebben, en zeg niet zomaar elke site terug.",
+        "Gebruik Access-Control-Allow-Credentials: true alleen samen met zo'n vaste lijst, nooit met *."
+      ]
+    }
+  },
+  "corp-coop": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer of hostingpartij de kopregel Cross-Origin-Opener-Policy: same-origin toevoegen.",
+        "Gebruik je inloggen of betalen via een venster van een andere partij (bijvoorbeeld PayPal), kies dan same-origin-allow-popups.",
+        "Controleer daarna of inloggen en betalen nog werken."
+      ]
+    }
+  },
+  "permissions": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer de kopregel Permissions-Policy: camera=(), microphone=(), geolocation=() toevoegen.",
+        "Gebruikt je site een van die functies wel, zet dan alleen je eigen site erin, bijvoorbeeld geolocation=(self).",
+        "Controleer daarna of alles op je site nog werkt."
+      ]
+    }
+  },
   "dmarc-sub": {
     "alle": {
       "wie": "wie je DNS beheert (vaak je hostingpartij of domeinleverancier)",

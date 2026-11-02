@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -28,7 +29,7 @@ func (k *keurder) instellingen(ctx context.Context, w *web) Groep {
 		return g
 	}
 	g.Punten = []Punt{csp(w), nosniff(w), frame(w), referrer(w), cookies(w), versie(w), mixed(w), trackers(k.domein, w), k.securityTxt(ctx, w.host),
-		software(w), bibliotheken(w), php(w), sri(k.domein, w), formulieren(w)}
+		software(w), bibliotheken(w), php(w), sri(k.domein, w), formulieren(w), cors(w), corpCoop(w), permissies(w)}
 	return g
 }
 
@@ -40,36 +41,69 @@ func csp(w *web) Punt {
 			metDetail(ontbreektOp(w, "Content-Security-Policy")...)
 	}
 	l := strings.ToLower(v)
-	scripts := richtlijn(l, "script-src")
-	if scripts == "" {
-		scripts = richtlijn(l, "default-src")
+	zwak, object := cspZwak(l)
+	gezien := "Content-Security-Policy: " + kort(v, 160)
+	scripts := leegAls(richtlijn(l, "script-src"), richtlijn(l, "default-src"))
+	if scripts == "" || len(zwak) > 0 || object != "" {
+		reden, wat := "Er staat een beleid, maar het laat nog onveilige scripts toe", zwak
+		if object != "" {
+			reden, wat = "Er staat een beleid, maar het laat nog te veel toe", append(slices.Clip(zwak), "plug-ins via object-src")
+		}
+		if len(wat) > 0 {
+			reden += " (" + strings.Join(wat, ", ") + ")"
+		}
+		return punt("csp", "CSP", Matig, "Het beleid voor scripts is ruim", reden+". Daarmee beschermt het weinig.").met(gezien).metDetail(cspDetail(l, zwak, object)...)
 	}
-	var zwak []string
-	if strings.Contains(scripts, "'unsafe-inline'") && !strings.Contains(scripts, "'nonce-") && !strings.Contains(scripts, "'sha256-") && !strings.Contains(scripts, "'strict-dynamic'") {
-		zwak = append(zwak, "'unsafe-inline'")
+	return punt("csp", "CSP", Goed, "Streng beleid voor scripts",
+		"Alleen scripts die je site zelf aanwijst, mogen draaien.").met(gezien).metDetail(cspDetail(l, nil, "")...)
+}
+
+// cspZwak weegt het beleid zoals Mozilla Observatory: onveilig is
+// 'unsafe-inline', 'unsafe-eval', data: of een te brede bron (*, http:,
+// https:) in script-src, en object-src die niet beperkt is. Een nonce of
+// hash zet 'unsafe-inline' buiten werking, en met 'strict-dynamic' plus een
+// nonce of hash negeert de browser ook de bronnen en schema's (CSP3). Zonder
+// script-src of object-src geldt default-src. base-uri weegt Observatory niet
+// mee; die noemen we alleen in het detail, net als form-action.
+func cspZwak(l string) (zwak []string, object string) {
+	scripts := leegAls(richtlijn(l, "script-src"), richtlijn(l, "default-src"))
+	bronnen := strings.Fields(scripts)
+	vastgelegd := false // nonce of hash
+	dynamisch := false
+	for _, d := range bronnen {
+		switch {
+		case strings.HasPrefix(d, "'nonce-"), strings.HasPrefix(d, "'sha256-"), strings.HasPrefix(d, "'sha384-"), strings.HasPrefix(d, "'sha512-"):
+			vastgelegd = true
+		case d == "'strict-dynamic'":
+			dynamisch = true
+		}
 	}
-	if strings.Contains(scripts, "'unsafe-eval'") {
-		zwak = append(zwak, "'unsafe-eval'")
-	}
-	for _, d := range strings.Fields(scripts) {
-		if d == "*" || d == "https:" || d == "http:" || d == "data:" {
+	for _, d := range bronnen {
+		switch {
+		case d == "'unsafe-inline'" && !vastgelegd && !dynamisch:
+			zwak = append(zwak, d)
+		case d == "'unsafe-eval'":
+			zwak = append(zwak, d)
+		case (d == "*" || d == "https:" || d == "http:" || d == "data:") && !(dynamisch && vastgelegd):
 			zwak = append(zwak, d)
 		}
 	}
-	gezien := "Content-Security-Policy: " + kort(v, 160)
-	if scripts == "" || len(zwak) > 0 {
-		reden := "Er staat een beleid, maar het laat nog onveilige scripts toe"
-		if len(zwak) > 0 {
-			reden += " (" + strings.Join(zwak, ", ") + ")"
+	obj := leegAls(richtlijn(l, "object-src"), richtlijn(l, "default-src"))
+	switch {
+	case obj == "":
+		object = "Ontbreekt: object-src (en default-src), dus plug-ins mogen overal vandaan komen. Zet object-src 'none'."
+	default:
+		for _, d := range strings.Fields(obj) {
+			if d == "*" || d == "https:" || d == "http:" || d == "data:" {
+				object = "object-src laat toe: " + d + ". Zet object-src 'none'."
+			}
 		}
-		return punt("csp", "CSP", Matig, "Het beleid voor scripts is ruim", reden+". Daarmee beschermt het weinig.").met(gezien).metDetail(cspDetail(l, zwak)...)
 	}
-	return punt("csp", "CSP", Goed, "Streng beleid voor scripts",
-		"Alleen scripts die je site zelf aanwijst, mogen draaien.").met(gezien).metDetail(cspDetail(l, nil)...)
+	return zwak, object
 }
 
 // cspDetail noemt per richtlijn wat er zwak is of ontbreekt.
-func cspDetail(l string, zwak []string) []string {
+func cspDetail(l string, zwak []string, object string) []string {
 	var uit []string
 	if len(zwak) > 0 {
 		bron := "script-src"
@@ -77,6 +111,9 @@ func cspDetail(l string, zwak []string) []string {
 			bron = "default-src"
 		}
 		uit = append(uit, bron+" laat toe: "+strings.Join(zwak, " "))
+	}
+	if object != "" {
+		uit = append(uit, object)
 	}
 	if richtlijn(l, "script-src") == "" && richtlijn(l, "default-src") == "" {
 		uit = append(uit, "Ontbreekt: script-src of default-src (dan geldt er niets voor scripts)")
