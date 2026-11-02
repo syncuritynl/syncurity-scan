@@ -107,7 +107,7 @@ func bestaat(ctx context.Context, r *Resolver, domein string) error {
 // handdrukken om de zwakke versleuteling precies te benoemen.
 func keur(ctx context.Context, domein string, r *Resolver, in Instellingen, vol bool) (*Uitslag, *keurder) {
 	// Een scan doet zo'n 33 verbindingen (waarvan hooguit 4 om elk adres van
-	// de website apart te meten en 3 voor de eigen TLS 1.2-proef); 60 laat
+	// de website apart te meten en hooguit 4 voor de eigen TLS 1.2-proef); 60 laat
 	// ruimte voor een tweede adres, en houdt misbruik als verkeersversterker
 	// klein. De volledige
 	// keuring meet zwakke suites één voor één (hooguit 13 handdrukken extra),

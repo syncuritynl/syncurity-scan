@@ -226,7 +226,12 @@ func TestOudeTLSPunten(t *testing.T) {
 		{"niet te meten", oudeTLS{fout: errProef}, tlsHash, Fout},
 		{"niets te kiezen", oudeTLS{opties: goed}, tlsVolgorde, Goed},
 		{"server kiest sterk", oudeTLS{opties: goed, zwakVoor: tls.TLS_RSA_WITH_AES_128_CBC_SHA}, tlsVolgorde, Goed},
-		{"bezoeker kiest", oudeTLS{opties: proefAntwoord{suite: tls.TLS_RSA_WITH_AES_128_CBC_SHA, heronder: true}, zwakVoor: tls.TLS_RSA_WITH_AES_128_CBC_SHA}, tlsVolgorde, Matig},
+		{"bezoeker kiest", oudeTLS{opties: proefAntwoord{suite: tls.TLS_RSA_WITH_AES_128_CBC_SHA, heronder: true}, zwakVoor: tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			omgekeerd: goed}, tlsVolgorde, Matig},
+		{"zwak in beide volgordes", oudeTLS{opties: proefAntwoord{suite: tls.TLS_RSA_WITH_AES_128_CBC_SHA, heronder: true}, zwakVoor: tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			omgekeerd: proefAntwoord{suite: tls.TLS_RSA_WITH_AES_128_CBC_SHA}}, tlsVolgorde, NVT},
+		{"tweede proef mislukt", oudeTLS{opties: proefAntwoord{suite: tls.TLS_RSA_WITH_AES_128_CBC_SHA, heronder: true}, zwakVoor: tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			omgekeerdFout: errProef}, tlsVolgorde, Fout},
 		{"opties in orde", oudeTLS{opties: goed}, tlsOpties, Goed},
 		{"compressie", oudeTLS{opties: proefAntwoord{compressie: 1, heronder: true}}, tlsOpties, Slecht},
 		{"geen heronderhandeling", oudeTLS{opties: proefAntwoord{}}, tlsOpties, Slecht},
@@ -238,7 +243,11 @@ func TestOudeTLSPunten(t *testing.T) {
 			t.Errorf("%s: %s (%s), verwacht %s", tc.naam, p.Status, p.Titel, tc.wil)
 		}
 	}
-	if p := tlsDH(oudeTLS{opties: goed, dh: dh(2048, "ffdhe2048")}); p.Gezien != "DHE met 2048 bits (ffdhe2048)" || !strings.Contains(strings.Join(p.Detail, " "), "2048 bits") {
-		t.Errorf("gezien %q, detail %v", p.Gezien, p.Detail)
+	if p := tlsDH(oudeTLS{opties: goed, dh: dh(2048, "ffdhe2048")}); p.Gezien != "DHE met 2048 bits (ffdhe2048)" || !strings.Contains(strings.Join(p.Detail, " "), "2048 bits") ||
+		!strings.Contains(p.Uitleg, "onvoldoende") {
+		t.Errorf("2048: gezien %q, uitleg %q, detail %v", p.Gezien, p.Uitleg, p.Detail)
+	}
+	if p := tlsDH(oudeTLS{opties: goed, dh: dh(3072, "ffdhe3072")}); !strings.Contains(p.Uitleg, "uit te faseren") || strings.Contains(p.Uitleg, "onvoldoende") {
+		t.Errorf("3072: uitleg %q", p.Uitleg)
 	}
 }

@@ -11,18 +11,20 @@ import (
 )
 
 // Vier punten over TLS 1.2 die internet.nl en SSL Labs ook meten, met de
-// eigen proef uit tlsproef.go: hooguit drie verbindingen.
+// eigen proef uit tlsproef.go: hooguit vier verbindingen.
 
 // oudeTLS is wat de proeven zagen.
 type oudeTLS struct {
-	fout     error // de eerste proef lukte niet: alles niet te meten
-	alleen13 bool  // de server weigert TLS 1.2
-	zwakVoor uint16
-	opties   proefAntwoord // compressie, heronderhandeling en de volgorde
-	dh       proefAntwoord
-	dhFout   error
-	hash     proefAntwoord
-	hashFout error
+	fout          error // de eerste proef lukte niet: alles niet te meten
+	alleen13      bool  // de server weigert TLS 1.2
+	zwakVoor      uint16
+	opties        proefAntwoord // compressie, heronderhandeling en de volgorde
+	omgekeerd     proefAntwoord // dezelfde suites, de sterke vooraan (alleen als opties de zwakke koos)
+	omgekeerdFout error
+	dh            proefAntwoord
+	dhFout        error
+	hash          proefAntwoord
+	hashFout      error
 }
 
 // sterkeSuites: ECDHE met GCM of ChaCha20, zoals een moderne browser.
@@ -64,6 +66,12 @@ func meetOudeTLS(dial func() (net.Conn, error), naam string, versie, zwak uint16
 	case o.opties.geweigerd:
 		o.fout = fmt.Errorf("de server weigerde de proef (alert %d)", o.opties.alert)
 		return o
+	}
+	// Koos de server de zwakke suite die we vooraan zetten? Dan nog één keer
+	// met de sterke vooraan: kiest hij dan sterk, dan laat hij de bezoeker
+	// kiezen; kiest hij weer zwak, dan heeft hij onze sterke suites niet.
+	if zwak != 0 && o.opties.suite == zwak {
+		o.omgekeerd, o.omgekeerdFout = proef(proefHello{suites: suites[1:]}) // zwak zit ook in verouderd, achteraan
 	}
 	// De andere twee tegelijk, zodat een trage server niet twee keer telt.
 	ecdhe := append(append([]uint16{}, sterkeSuites...), tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
@@ -115,8 +123,13 @@ func tlsDH(o oudeTLS) Punt {
 			fmt.Sprintf("Je website gebruikt nog sleuteluitwisseling met DH van maar %d bits. Die is met genoeg rekenkracht te kraken (de Logjam-aanval), zodat iemand versleuteld verkeer kan meelezen.", d.dhBits)).
 			met(gezien).metDetail(detail...)
 	}
+	if d.dhBits < 3072 {
+		return punt(id, tech, Matig, "Sleuteluitwisseling met DH is te zwak",
+			fmt.Sprintf("Je website accepteert nog sleuteluitwisseling met DH (DHE) van %d bits. Dat is nog niet gekraakt, maar volgens het NCSC (2025) onvoldoende. ECDHE is sneller en sterker.", d.dhBits)).
+			met(gezien).metDetail(detail...)
+	}
 	return punt(id, tech, Matig, "Sleuteluitwisseling met DH is uit te faseren",
-		"Je website accepteert nog sleuteluitwisseling met DH (DHE). Die is nog niet gekraakt, maar internet.nl en het NCSC noemen hem uit te faseren, en 2048 bits als onvoldoende. ECDHE is sneller en sterker.").
+		fmt.Sprintf("Je website accepteert nog sleuteluitwisseling met DH (DHE) van %d bits. Die is sterk genoeg, maar het NCSC en internet.nl noemen DHE uit te faseren. ECDHE is sneller en even sterk.", d.dhBits)).
 		met(gezien).metDetail(detail...)
 }
 
@@ -129,12 +142,20 @@ func tlsVolgorde(o oudeTLS) Punt {
 	switch {
 	case o.zwakVoor == 0:
 		return punt(id, tech, Goed, titel, "Je website accepteert alleen sterke versleuteling, dus er valt niets te kiezen.").met("Gekozen: " + gekozen)
-	case o.opties.suite == o.zwakVoor:
+	case o.opties.suite != o.zwakVoor:
+		return punt(id, tech, Goed, titel, "Ook als een bezoeker eerst een zwakkere versleuteling aanbiedt, kiest je server de sterkste.").met("Gekozen: " + gekozen)
+	case o.omgekeerdFout != nil || o.omgekeerd.geweigerd:
+		return punt(id, tech, Fout, titel, "We konden de volgorde niet goed meten: de tweede proef lukte niet.").metDetail("Proef: " + fmt.Sprint(leegFout(o.omgekeerdFout)))
+	case o.omgekeerd.suite == o.zwakVoor:
+		// Zwak in beide volgordes: de server heeft geen van onze sterke
+		// suites. Dat is geen kwestie van volgorde; "Sterke versleuteling"
+		// noemt de verouderde suite al.
+		return punt(id, tech, NVT, titel, "Je server accepteert geen van de sterke suites die we aanboden, dus er valt niets te kiezen. Zie het punt over sterke versleuteling.").met("Gekozen: " + gekozen)
+	default:
 		return punt(id, tech, Matig, "De bezoeker kiest de versleuteling",
 			"Je website accepteert naast sterke ook verouderde versleuteling, en laat de bezoeker kiezen. Biedt een oud of slecht ingesteld programma de zwakkere als eerste aan, dan neemt je server die. Een goed ingestelde server kiest zelf de sterkste.").
-			met("Gekozen: " + gekozen + ", die we als eerste aanboden").metDetail("We boden eerst " + gekozen + " aan, en daarna sterke suites met ECDHE en GCM.")
-	default:
-		return punt(id, tech, Goed, titel, "Ook als een bezoeker eerst een zwakkere versleuteling aanbiedt, kiest je server de sterkste.").met("Gekozen: " + gekozen)
+			met("Gekozen: "+gekozen+", die we als eerste aanboden").metDetail("We boden eerst "+gekozen+" aan, en daarna sterke suites met ECDHE en GCM.",
+			"Met de sterke vooraan koos de server "+suiteNaam(o.omgekeerd.suite)+".")
 	}
 }
 
