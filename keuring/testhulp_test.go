@@ -113,6 +113,34 @@ func (ca *testCA) blad(t *testing.T, tot time.Time, namen ...string) tls.Certifi
 	return tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key}
 }
 
+// tussen maakt een tussencertificaat onder deze CA. Bladen van het
+// tussencertificaat zijn alleen te controleren als de server het meestuurt.
+func (ca *testCA) tussen(t *testing.T) *testCA {
+	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	tpl := &x509.Certificate{SerialNumber: big.NewInt(time.Now().UnixNano()), Subject: pkix.Name{CommonName: "Test tussen-CA", Organization: []string{"Let's Encrypt"}},
+		NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(24 * time.Hour * 365), IsCA: true,
+		KeyUsage: x509.KeyUsageCertSign, BasicConstraintsValid: true}
+	der, err := x509.CreateCertificate(rand.Reader, tpl, ca.cert, &key.PublicKey, ca.key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, _ := x509.ParseCertificate(der)
+	return &testCA{c, key, ca.pool}
+}
+
+// staatVan doet een handdruk met een testserver, zonder het certificaat te
+// controleren, zoals handdruk() dat ook doet.
+func staatVan(t *testing.T, adres, naam string) *tls.ConnectionState {
+	t.Helper()
+	c, err := tls.Dial("tcp", adres, &tls.Config{ServerName: naam, InsecureSkipVerify: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	s := c.ConnectionState()
+	return &s
+}
+
 // tlsServer start een https-server met dit certificaat en deze pagina.
 func tlsServer(t *testing.T, cert tls.Certificate, pagina string) string {
 	s := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

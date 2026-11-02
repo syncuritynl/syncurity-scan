@@ -33,11 +33,7 @@ func certWWW(w *web) Punt {
 	if len(certs) == 0 {
 		return punt(id, tech, Slecht, "Geen certificaat voor de naam met of zonder www", "De naam met of zonder www stuurt geen certificaat mee.")
 	}
-	tussen := x509.NewCertPool()
-	for _, c := range certs[1:] {
-		tussen.AddCert(c)
-	}
-	_, err := certs[0].Verify(x509.VerifyOptions{DNSName: w.andere, Intermediates: tussen})
+	err := controleerKeten(certs, w.andere, w.roots)
 	gezien := fmt.Sprintf("%s: uitgegeven door %s, geldig tot %s", w.andere, uitgever(certs[0]), certs[0].NotAfter.Format("2-1-2006"))
 	var naam x509.HostnameError
 	var ongeldig x509.CertificateInvalidError

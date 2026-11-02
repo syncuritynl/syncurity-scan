@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"io"
 	"net"
 	"net/http"
@@ -51,6 +52,10 @@ type web struct {
 	andereFout  error
 	robotsCode  int          // HTTP-status van /robots.txt
 	gewicht     []afbGewicht // grootte van de eerste afbeeldingen op het eigen domein
+
+	// roots: de vertrouwde basiscertificaten. nil betekent die van het
+	// systeem, zoals een browser; alleen de tests zetten hier een eigen CA.
+	roots *x509.CertPool
 }
 
 type afbGewicht struct {

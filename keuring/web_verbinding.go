@@ -1,6 +1,7 @@
 package keuring
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -50,13 +51,19 @@ func (k *keurder) verbinding(w *web) Groep {
 }
 
 func tlsModern(w *web) Punt {
-	v := tls.VersionName(w.staat.Version)
+	gezien := "Beste versie: " + tls.VersionName(w.staat.Version)
+	if w.staat.CurveID != 0 {
+		gezien += " · sleutel: " + w.staat.CurveID.String()
+		if kwantumveilig(w.staat) {
+			gezien += " (kwantumveilig)"
+		}
+	}
 	if w.staat.Version >= tls.VersionTLS13 {
 		return punt("tls-modern", "TLS 1.3", Goed, "Moderne versleuteling",
-			"Je website biedt TLS 1.3 aan, de nieuwste en snelste versie.").met("Beste versie: " + v)
+			"Je website biedt TLS 1.3 aan, de nieuwste en snelste versie.").met(gezien)
 	}
 	return punt("tls-modern", "TLS 1.3", Matig, "Niet de nieuwste versleuteling",
-		"Je website biedt TLS 1.3 nog niet aan. TLS 1.2 is nog veilig, maar 1.3 is sneller en sluit oude zwakke plekken uit.").met("Beste versie: " + v)
+		"Je website biedt TLS 1.3 nog niet aan. TLS 1.2 is nog veilig, maar 1.3 is sneller en sluit oude zwakke plekken uit.").met(gezien)
 }
 
 func tlsOud(w *web) Punt {
@@ -92,15 +99,12 @@ func certificaat(w *web) Punt {
 		return punt("cert", "X.509", Slecht, "Geen geldig certificaat", "Bezoekers krijgen een waarschuwing dat de verbinding niet veilig is.")
 	}
 	blad := w.staat.PeerCertificates[0]
-	tussen := x509.NewCertPool()
-	for _, c := range w.staat.PeerCertificates[1:] {
-		tussen.AddCert(c)
-	}
-	_, err := blad.Verify(x509.VerifyOptions{DNSName: w.host, Intermediates: tussen})
+	err := controleerKeten(w.staat.PeerCertificates, w.host, w.roots)
 	dagen := int(time.Until(blad.NotAfter).Hours() / 24)
 	gezien := fmt.Sprintf("Uitgegeven door %s, geldig tot %s", uitgever(blad), blad.NotAfter.Format("2-1-2006"))
 	var ongeldig x509.CertificateInvalidError
 	var naam x509.HostnameError
+	var onbekend x509.UnknownAuthorityError
 	detail := certDetail(w.staat.PeerCertificates)
 	if err != nil {
 		detail = append([]string{"Fout bij controleren: " + err.Error()}, detail...)
@@ -112,6 +116,12 @@ func certificaat(w *web) Punt {
 	case errors.As(err, &naam):
 		return punt("cert", "X.509", Slecht, "Het certificaat hoort bij een andere naam",
 			"Het certificaat is niet uitgegeven voor "+w.host+". Bezoekers krijgen een waarschuwing.").met(gezien).metDetail(detail...)
+	case errors.As(err, &onbekend) && len(w.staat.PeerCertificates) == 1 && !bytes.Equal(blad.RawIssuer, blad.RawSubject):
+		// Alleen het blad, door een ander uitgegeven: het tussencertificaat
+		// ontbreekt. We halen het niet zelf op (AIA): dat zou een verbinding
+		// buiten het domein zijn.
+		return punt("cert", "X.509", Slecht, "De keten van het certificaat is niet compleet",
+			"Je server stuurt het tussencertificaat niet mee. Chrome vult dat vaak zelf aan, maar Firefox, Android-telefoons, apps en andere servers geven een waarschuwing of weigeren de verbinding.").met(gezien).metDetail(detail...)
 	case err != nil:
 		return punt("cert", "X.509", Slecht, "Het certificaat wordt niet vertrouwd",
 			"Browsers vertrouwen dit certificaat niet, bijvoorbeeld omdat het zelf ondertekend is of de keten niet compleet is.").met(gezien).metDetail(detail...)
@@ -122,6 +132,18 @@ func certificaat(w *web) Punt {
 		return punt("cert", "X.509", Goed, "Geldig certificaat",
 			fmt.Sprintf("Vertrouwd door alle browsers en nog %d dagen geldig.", dagen)).met(gezien).metDetail(detail...)
 	}
+}
+
+// controleerKeten controleert het certificaat voor host zoals een browser dat
+// doet, met alleen de tussencertificaten die de server zelf meestuurde.
+// roots nil: de vertrouwde basiscertificaten van het systeem.
+func controleerKeten(keten []*x509.Certificate, host string, roots *x509.CertPool) error {
+	tussen := x509.NewCertPool()
+	for _, c := range keten[1:] {
+		tussen.AddCert(c)
+	}
+	_, err := keten[0].Verify(x509.VerifyOptions{DNSName: host, Intermediates: tussen, Roots: roots})
+	return err
 }
 
 // certDetail: voor welke namen het certificaat geldt, en de keten. Handig om
