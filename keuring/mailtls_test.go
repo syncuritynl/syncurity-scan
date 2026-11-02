@@ -10,6 +10,7 @@ import (
 	"net/netip"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -233,5 +234,64 @@ func TestDANEMX(t *testing.T) {
 	}
 	if r := daneMX("mx.voorbeeld.nl", record(ander), nil); r != "" {
 		t.Errorf("niet gemeten: %q", r)
+	}
+}
+
+// Microsoft 365 benaderen we niet: geen verbinding, geen wachten, niet van
+// toepassing. Bij een gemengd stel meten we alleen de andere.
+func TestMicrosoftOverslaan(t *testing.T) {
+	for naam, wil := range map[string]string{
+		"voorbeeld-nl.mail.protection.outlook.com": "Microsoft 365", "voorbeeld-nl.c-v1.mx.microsoft": "Microsoft 365",
+		"voorbeeld-nl.mail.eo.outlook.com.": "", "eur.olc.protection.outlook.com": "Microsoft 365",
+		"aspmx.l.google.com": "", "mx.microsoft.voorbeeld.nl": "", "nepmx.microsoft": "",
+	} {
+		if l := overgeslagen(naam); l != wil {
+			t.Errorf("%s: %q, verwacht %q", naam, l, wil)
+		}
+	}
+
+	ca := nieuweCA(t)
+	mx := &nepMX{starttls: true, cfg: &tls.Config{Certificates: []tls.Certificate{ca.blad(t, time.Now().Add(time.Hour), "mx.gemengd.nl")}, MinVersion: tls.VersionTLS12,
+		CipherSuites: []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256}}}
+	adres := mx.start(t)
+	var mu sync.Mutex // de drie sessies per mailserver lopen deels tegelijk
+	var gebeld, opgezocht []string
+	adressen := func(_ context.Context, n string) ([]netip.Addr, []netip.Addr) {
+		mu.Lock()
+		defer mu.Unlock()
+		opgezocht = append(opgezocht, n)
+		return []netip.Addr{netip.MustParseAddr("192.0.2.26")}, nil
+	}
+	dial := func(_ context.Context, n string, _ netip.Addr) (net.Conn, error) {
+		mu.Lock()
+		gebeld = append(gebeld, n)
+		mu.Unlock()
+		return net.Dial("tcp", adres)
+	}
+
+	ms := meetMailservers(context.Background(), []string{"gemengd-nl.mail.protection.outlook.com", "gemengd-nl.c-v1.mx.microsoft"}, adressen, dial, "scan.voorbeeld.nl")
+	if len(gebeld)+len(opgezocht) > 0 {
+		t.Errorf("Microsoft 365 benaderd: %v %v", gebeld, opgezocht)
+	}
+	for _, p := range []Punt{starttlsPunt(ms, nil, "Microsoft 365"), mxCert(ms, nil, ca.pool)} {
+		if p.Status != NVT || !strings.Contains(p.Uitleg, "Microsoft 365 weigert controles") || !strings.Contains(p.Uitleg, "internet.nl") {
+			t.Errorf("%s: %s %q", p.ID, p.Status, p.Uitleg)
+		}
+	}
+
+	ms = meetMailservers(context.Background(), []string{"gemengd-nl.mail.protection.outlook.com", "mx.gemengd.nl"}, adressen, dial, "scan.voorbeeld.nl")
+	if strings.Join(gebeld, ",") != "mx.gemengd.nl,mx.gemengd.nl,mx.gemengd.nl" {
+		t.Errorf("gebeld: %v", gebeld)
+	}
+	if s, c := starttlsPunt(ms, nil, "Microsoft 365 en eigen server"), mxCert(ms, nil, ca.pool); s.Status != Goed || c.Status != Goed {
+		t.Errorf("gemengd: starttls %s %q, mx-cert %s", s.Status, s.Gezien, c.Status)
+	}
+
+	// Een weigering staat in het geheugen: de volgende scan belt niet opnieuw.
+	gebeld = nil
+	inGeheugen(mxMeting{naam: "mx.weigert.nl", fout: errors.New("i/o timeout")}, time.Now())
+	ms = meetMailservers(context.Background(), []string{"mx.weigert.nl"}, adressen, dial, "scan.voorbeeld.nl")
+	if len(gebeld) > 0 || starttlsPunt(ms, nil, "").Status != Fout {
+		t.Errorf("weigering uit het geheugen: gebeld %v", gebeld)
 	}
 }

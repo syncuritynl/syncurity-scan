@@ -138,6 +138,8 @@ type mxMeting struct {
 	oud     string // geaccepteerde versie van vóór TLS 1.2
 	zwak    string // geaccepteerde onveilige of verouderde suite
 	dhBits  int    // als dat een DHE-suite was
+
+	overgeslagen string // de leverancier, als we deze mailserver niet benaderen (zie overslaan)
 }
 
 type smtpDialer func(ctx context.Context, naam string, a netip.Addr) (net.Conn, error)
@@ -257,26 +259,67 @@ func inGeheugen(m mxMeting, nu time.Time) {
 	mxGeheugen.m[m.naam] = mxBewaard{nu, m}
 }
 
+// overslaan: mailservers waarmee we geen verbinding maken, op het eind van
+// hun naam. Getest op 2-11-2026: Microsoft 365 antwoordt na een paar
+// sessies EHLO, STARTTLS en QUIT vanuit een datacenter niet meer op poort 25
+// (de verbinding loopt op elk adres vast), terwijl bijvoorbeeld Google
+// gewoon antwoordt. Een scan zou dan op time-outs wachten en Microsoft
+// blijven benaderen. Komen er meer leveranciers bij die zo reageren, zet
+// ze dan hier.
+var overslaan = []struct{ achter, naam string }{
+	{"mail.protection.outlook.com", "Microsoft 365"},
+	{"olc.protection.outlook.com", "Microsoft 365"},
+	{"mx.microsoft", "Microsoft 365"},
+}
+
+// overgeslagen geeft de leverancier als we mailserver mx niet benaderen.
+func overgeslagen(mx string) string {
+	mx = strings.ToLower(strings.TrimSuffix(mx, "."))
+	for _, o := range overslaan {
+		if mx == o.achter || strings.HasSuffix(mx, "."+o.achter) {
+			return o.naam
+		}
+	}
+	return ""
+}
+
 // mailTLS meet de eerste twee mailservers, of haalt ze uit het geheugen.
-// De meting loopt los van de scan door (hooguit 40 seconden), zodat een
-// trage mailserver de volgende scan wel uit het geheugen komt; de scan zelf
-// wacht hooguit tot zijn eigen tijd op is.
 func (k *keurder) mailTLS(ctx context.Context) ([]mxMeting, error) {
 	if k.ehlo == "" || !hstsNaam(strings.ToLower(k.ehlo)) {
 		return nil, errGeenEHLO // ook een naam met spaties of regeleinden niet
 	}
 	namen := eerste(k.mxOpVoorkeur(ctx), 2)
-	k.kiezer.StaMailToe(namen)
+	var toegestaan []string
+	for _, n := range namen {
+		if overgeslagen(n) == "" {
+			toegestaan = append(toegestaan, n)
+		}
+	}
+	k.kiezer.StaMailToe(toegestaan)
+	return meetMailservers(ctx, namen, k.kiezer.Adressen, k.smtpDial, k.ehlo), nil
+}
+
+// meetMailservers meet de mailservers tegelijk. Wat we overslaan, of wat
+// nog in het geheugen staat (ook een weigering), kost geen verbinding. De
+// meting loopt los van de scan door (hooguit 40 seconden), zodat een trage
+// mailserver de volgende scan wel uit het geheugen komt; de scan zelf
+// wacht hooguit tot zijn eigen tijd op is.
+func meetMailservers(ctx context.Context, namen []string, adressen func(context.Context, string) ([]netip.Addr, []netip.Addr), dial smtpDialer, ehlo string) []mxMeting {
 	uit := make([]mxMeting, len(namen))
 	klaar := make([]chan struct{}, len(namen))
 	for i, n := range namen {
 		klaar[i] = make(chan struct{})
+		if l := overgeslagen(n); l != "" {
+			uit[i] = mxMeting{naam: n, overgeslagen: l}
+			close(klaar[i])
+			continue
+		}
 		if m, ok := uitGeheugen(n, time.Now()); ok {
 			uit[i] = m
 			close(klaar[i])
 			continue
 		}
-		v4, v6 := k.kiezer.Adressen(ctx, n)
+		v4, v6 := adressen(ctx, n)
 		var a netip.Addr
 		switch {
 		case len(v4) > 0:
@@ -291,7 +334,7 @@ func (k *keurder) mailTLS(ctx context.Context) ([]mxMeting, error) {
 		los, stop := context.WithTimeout(context.WithoutCancel(ctx), 40*time.Second)
 		go func() {
 			defer stop()
-			m := meetMX(los, n, a, k.smtpDial, k.ehlo)
+			m := meetMX(los, n, a, dial, ehlo)
 			if !errors.Is(m.fout, ErrBudget) && !errors.Is(m.fout, ErrGeenMailserver) {
 				inGeheugen(m, time.Now())
 			}
@@ -304,10 +347,10 @@ func (k *keurder) mailTLS(ctx context.Context) ([]mxMeting, error) {
 		case <-klaar[i]:
 		case <-ctx.Done():
 			// Wat nog loopt, schrijft straks in het geheugen; hier telt het niet.
-			return metTeLaat(uit, klaar, namen), nil
+			return metTeLaat(uit, klaar, namen)
 		}
 	}
-	return uit, nil
+	return uit
 }
 
 // metTeLaat: wat klaar is, en "te laat" voor de rest.
