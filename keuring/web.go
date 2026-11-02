@@ -45,6 +45,9 @@ type web struct {
 	andereCode int
 	cache      string // Cache-Control van een stylesheet of script
 	cacheURL   string
+	stijl      string // inhoud van het eerste eigen stylesheet, hooguit maxStijl
+	stijlAdres string // waar dat stylesheet staat
+	stijlAf    bool   // het stylesheet was groter dan maxStijl
 
 	// toegevoegd met de tweede reeks punten
 	andereAdres bool                 // de andere variant (met of zonder www) heeft een adres
@@ -250,33 +253,7 @@ func (w *web) haalVindbaarheid(ctx context.Context, k *keurder) {
 		}
 	}
 
-	// Cache: van het eerste stylesheet of script op hetzelfde domein.
-	for _, bron := range append([]string{w.info.eersteStijl}, w.info.bronnen...) {
-		u, err := url.Parse(strings.TrimSpace(bron))
-		if err != nil || bron == "" {
-			continue
-		}
-		doel, _ := url.Parse(basis + "/")
-		u = doel.ResolveReference(u)
-		if u.Scheme != "https" || (u.Hostname() != k.domein && !strings.HasSuffix(u.Hostname(), "."+k.domein)) {
-			continue
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodHead, u.String(), nil)
-		if err != nil {
-			continue
-		}
-		if r, err := k.web.Do(req); err == nil {
-			r.Body.Close()
-			if r.StatusCode == http.StatusOK {
-				w.cache = r.Header.Get("Cache-Control")
-				if w.cache == "" && (r.Header.Get("ETag") != "" || r.Header.Get("Last-Modified") != "") {
-					w.cache = "alleen ETag/Last-Modified"
-				}
-				w.cacheURL = u.Path
-			}
-		}
-		break
-	}
+	w.haalStijl(ctx, k, basis)
 
 	// Gewicht van de eerste afbeeldingen op het eigen domein: hooguit vijf
 	// HEAD-verzoeken, alleen de kop (Content-Length).
@@ -305,6 +282,66 @@ func (w *web) haalVindbaarheid(ctx context.Context, k *keurder) {
 				w.gewicht = append(w.gewicht, afbGewicht{u.Path, r.ContentLength})
 			}
 		}
+	}
+}
+
+// haalStijl: de cache van het eerste stylesheet op hetzelfde domein, of
+// anders van het eerste script. Eén verzoek. Het stylesheet halen we op
+// (hooguit maxStijl) voor de lettertypen en het verkleinen; van een script
+// alleen de kop.
+func (w *web) haalStijl(ctx context.Context, k *keurder, basis string) {
+	doel, _ := url.Parse(basis + "/")
+	eigen := func(bron string) *url.URL {
+		u, err := url.Parse(strings.TrimSpace(bron))
+		if err != nil || bron == "" {
+			return nil
+		}
+		u = doel.ResolveReference(u)
+		if u.Scheme != "https" || (u.Hostname() != k.domein && !strings.HasSuffix(u.Hostname(), "."+k.domein)) {
+			return nil
+		}
+		return u
+	}
+	var bestand *url.URL
+	methode := http.MethodGet
+	for _, b := range w.info.stijlen {
+		if bestand = eigen(b); bestand != nil {
+			break
+		}
+	}
+	if bestand == nil {
+		methode = http.MethodHead
+		for _, b := range w.info.bronnen {
+			if bestand = eigen(b); bestand != nil {
+				break
+			}
+		}
+	}
+	if bestand == nil {
+		return
+	}
+	req, err := http.NewRequestWithContext(ctx, methode, bestand.String(), nil)
+	if err != nil {
+		return
+	}
+	r, err := k.web.Do(req)
+	if err != nil {
+		return
+	}
+	inhoud, _ := io.ReadAll(io.LimitReader(r.Body, maxStijl+1))
+	r.Body.Close()
+	if r.StatusCode != http.StatusOK {
+		return
+	}
+	w.cache = r.Header.Get("Cache-Control")
+	if w.cache == "" && (r.Header.Get("ETag") != "" || r.Header.Get("Last-Modified") != "") {
+		w.cache = "alleen ETag/Last-Modified"
+	}
+	w.cacheURL = bestand.Path
+	if methode == http.MethodGet && !strings.Contains(strings.ToLower(r.Header.Get("Content-Type")), "html") {
+		w.stijlAf = len(inhoud) > maxStijl
+		w.stijl = string(inhoud[:min(len(inhoud), maxStijl)])
+		w.stijlAdres = r.Request.URL.String()
 	}
 }
 
@@ -377,6 +414,10 @@ func (k *keurder) pagina(ctx context.Context, adres string) (*http.Response, []b
 }
 
 const maxPagina = 2 << 20
+
+// maxStijl: zoveel van het stylesheet lezen we. Genoeg voor de meeste
+// sites; wat erachter staat, laten we liggen.
+const maxStijl = 512 << 10
 
 // haal haalt een URL op met de gegeven client, hooguit 512 KiB.
 func (k *keurder) haal(ctx context.Context, c *http.Client, adres string) (*http.Response, []byte) {

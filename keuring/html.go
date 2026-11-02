@@ -37,7 +37,7 @@ type paginaInfo struct {
 	privacyLink  bool
 	tekst        string // zichtbare tekst, ingekort
 	bronnen      []string
-	eersteStijl  string      // eerste stylesheet of script op hetzelfde domein
+	stijlen      []string    // href van elke <link rel=stylesheet>, in volgorde
 	x            paginaExtra // toegankelijkheid, privacy, software (html_extra.go)
 }
 
@@ -89,9 +89,7 @@ func ontleed(body []byte) paginaInfo {
 						p.stijlbladen++
 					}
 					p.bronnen = append(p.bronnen, a["href"])
-					if p.eersteStijl == "" {
-						p.eersteStijl = a["href"]
-					}
+					p.stijlen = append(p.stijlen, a["href"])
 				}
 			case "script":
 				verborgen = true
