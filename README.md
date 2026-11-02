@@ -20,8 +20,11 @@ Elke uitslag staat in gewone taal: wat we zagen, en wat het betekent.
 De scan is **passief**. Hij kijkt alleen naar wat iedereen op internet kan zien:
 
 - alleen poort 80 en 443 van de website, en DNS via een validerende resolver
-- geen poortscan, geen inlogpogingen, geen verbinding met mailservers
-- hooguit 60 verbindingen per scan
+- geen poortscan en geen inlogpogingen
+- de mailservers alleen als je `-ehlo` opgeeft, en dan alleen wat elke
+  verzendende mailserver doet: EHLO, STARTTLS, de TLS-handdruk en QUIT
+  (hooguit zes sessies op poort 25, nooit een bericht)
+- hooguit 60 verbindingen per scan naar de website
 - vóór elke verbinding controleert de scanner of het adres echt publiek is,
   zodat niemand hem naar een intern netwerk kan sturen
 
@@ -89,7 +92,8 @@ Een lek gevonden? Meld het niet in een issue, maar volgens
 The scanner behind [syncurity.nl](https://syncurity.nl): a free, passive check
 of a website, its e-mail and its domain name, with over 100 checks in ten groups,
 explained in plain Dutch. It only looks at what is public (ports 80 and 443,
-DNS via a validating resolver), never scans ports, never tries to log in and
-never connects to mail servers. Licensed under the AGPL-3.0. Report security
+DNS via a validating resolver), never scans ports and never tries to log in.
+With `-ehlo` it also checks STARTTLS on the mail servers, doing only what any
+sending mail server does (EHLO, STARTTLS, the handshake, QUIT). Licensed under the AGPL-3.0. Report security
 issues as described in [SECURITY.md](SECURITY.md). Contributions are welcome
 in Dutch or English; see [CONTRIBUTING.md](CONTRIBUTING.md).

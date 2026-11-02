@@ -17,10 +17,11 @@ func main() {
 	alsJSON := flag.Bool("json", false, "uitslag als JSON")
 	vol := flag.Bool("vol", false, "het volledige rapport: details, oplossingen en subdomeinen (alleen voor je eigen domein)")
 	resolver := flag.String("resolver", "1.1.1.1:53,9.9.9.9:53", "validerende resolvers, komma-gescheiden")
+	ehlo := flag.String("ehlo", "", "naam bij EHLO voor de STARTTLS-meting van mailservers (leeg: niet meten)")
 	data := flag.String("data", "", "map met rpki.txt.gz en hsts.txt.gz (leeg: die punten zijn niet te meten)")
 	flag.Parse()
 	if flag.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "gebruik: keur [-json] [-vol] [-resolver host:poort] [-data map] domein")
+		fmt.Fprintln(os.Stderr, "gebruik: keur [-json] [-vol] [-resolver host:poort] [-data map] [-ehlo naam] domein")
 		os.Exit(2)
 	}
 	in := keuring.Standaard
@@ -28,6 +29,7 @@ func main() {
 	if *data != "" {
 		in.Lijsten = keuring.NieuweLijsten(*data)
 	}
+	in.EHLO = *ehlo
 
 	var (
 		u   *keuring.Uitslag

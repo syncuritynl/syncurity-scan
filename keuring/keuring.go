@@ -18,6 +18,7 @@ type Instellingen struct {
 	Totaal    time.Duration // de hele keuring
 	UserAgent string
 	Lijsten   *Lijsten // RPKI en HSTS-preload van schijf; nil: die punten zijn niet te meten
+	EHLO      string   // de naam bij EHLO voor de STARTTLS-meting; leeg: geen verbinding met mailservers
 }
 
 // Standaard is wat de dienst gebruikt als er niets anders is opgegeven.
@@ -31,16 +32,18 @@ var Standaard = Instellingen{
 }
 
 type keurder struct {
-	domein  string
-	r       *Resolver
-	kiezer  *Kiezer
-	web     *http.Client // volgt doorverwijzingen binnen het domein
-	eenStap *http.Client // volgt geen doorverwijzingen
-	vrij    *http.Client // volgt https-doorverwijzingen naar elk domein
-	timeout time.Duration
-	ua      string // dezelfde User-Agent als in de http-clients
-	lijsten *Lijsten
-	vol     bool // volledige keuring: een paar extra metingen voor de details
+	domein   string
+	r        *Resolver
+	kiezer   *Kiezer
+	web      *http.Client // volgt doorverwijzingen binnen het domein
+	eenStap  *http.Client // volgt geen doorverwijzingen
+	vrij     *http.Client // volgt https-doorverwijzingen naar elk domein
+	timeout  time.Duration
+	ua       string // dezelfde User-Agent als in de http-clients
+	lijsten  *Lijsten
+	ehlo     string
+	smtpDial smtpDialer // poort 25 van de mailservers (Kiezer.DialSMTP)
+	vol      bool       // volledige keuring: een paar extra metingen voor de details
 
 	w     *web // wat we van de website haalden, voor de voorstellen
 	mu    sync.Mutex
@@ -108,10 +111,11 @@ func bestaat(ctx context.Context, r *Resolver, domein string) error {
 // keur doet het werk. vol: de volledige keuring, met een paar extra
 // handdrukken om de zwakke versleuteling precies te benoemen.
 func keur(ctx context.Context, domein string, r *Resolver, in Instellingen, vol bool) (*Uitslag, *keurder) {
-	// Een scan doet zo'n 33 verbindingen (waarvan hooguit 4 om elk adres van
-	// de website apart te meten en hooguit 4 voor de eigen TLS 1.2-proef); 60 laat
-	// ruimte voor een tweede adres, en houdt misbruik als verkeersversterker
-	// klein. De volledige
+	// Een scan doet zo'n 34 verbindingen met de website (waarvan hooguit 4
+	// om elk adres apart te meten en hooguit 4 voor de eigen TLS 1.2-proef);
+	// 60 laat ruimte voor een tweede adres, en houdt misbruik als
+	// verkeersversterker klein. De sessies op poort 25 met de mailservers
+	// (hooguit 6, zie maxSMTP) tellen apart: andere servers. De volledige
 	// keuring meet zwakke suites één voor één (hooguit 13 handdrukken extra),
 	// en mag daarom 80. De subdomeinen hebben een eigen budget (subdomein.go).
 	budget := int32(60)
@@ -138,9 +142,11 @@ func keur(ctx context.Context, domein string, r *Resolver, in Instellingen, vol 
 		timeout: in.Timeout,
 		ua:      in.UserAgent,
 		lijsten: in.Lijsten,
+		ehlo:    in.EHLO,
 		vol:     vol,
 	}
 
+	k.smtpDial = kiezer.DialSMTP
 	begin := time.Now()
 
 	// De website één keer ophalen, terwijl de DNS-groepen al lopen.

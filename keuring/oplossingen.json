@@ -169,6 +169,14 @@
           "Laat je beheerder tot slot Enable-SmtpDaneInbound uitvoeren."
         ]
       }
+    },
+    "slecht": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Laat je mailleverancier of beheerder het TLSA-record van je mailserver opnieuw uitrekenen voor het certificaat dat nu wordt gebruikt.",
+        "Zet het nieuwe record naast het oude en haal het oude pas weg als het nieuwe overal zichtbaar is (na een dag).",
+        "Spreek af dat het record bij elke vernieuwing van het certificaat mee verandert, of maak het record voor de sleutel (selector 1) en houd de sleutel gelijk."
+      ]
     }
   },
   "dnssec": {
@@ -1208,6 +1216,34 @@
         "Vraag je mailleverancier of ze de route naar je mailservers willen vastleggen met een ROA-record in RPKI.",
         "Dit doet de eigenaar van het netwerk bij RIPE NCC of een andere registry; zelf hoef je niets te veranderen.",
         "Vastleggen kost niets en is binnen een dag zichtbaar."
+      ]
+    }
+  },
+  "starttls": {
+    "slecht": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Vraag je mailleverancier of beheerder om STARTTLS aan te zetten op alle mailservers uit je MX-records, met een geldig certificaat.",
+        "Mislukt de versleuteling, laat dan de TLS-instellingen en het certificaat van de mailserver nakijken.",
+        "Laat de scan daarna opnieuw draaien."
+      ]
+    },
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Vraag je mailleverancier of beheerder om TLS 1.0 en 1.1 uit te zetten en alleen TLS 1.2 en 1.3 te laten staan.",
+        "Laat ook de zwakke en verouderde versleutelmethoden (CBC, RSA-sleuteluitwisseling, DHE) uitzetten.",
+        "Gebruik je Microsoft 365 of Google Workspace, dan kun je dit niet zelf veranderen; dan is er niets te doen."
+      ]
+    }
+  },
+  "mx-cert": {
+    "matig": {
+      "wie": "wie je e-mail beheert",
+      "stappen": [
+        "Vraag je mailleverancier of beheerder om een geldig certificaat op de mailserver, voor precies de naam uit je MX-record.",
+        "Wijst je MX-record naar een naam van je leverancier, gebruik dan precies die naam en niet een eigen alias.",
+        "Laat het certificaat automatisch vernieuwen."
       ]
     }
   },

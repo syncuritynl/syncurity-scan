@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"slices"
+	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -85,13 +88,72 @@ func controle(_, adres string, _ syscall.RawConn) error {
 }
 
 // Kiezer opent TCP-verbindingen, alleen naar publieke adressen en alleen naar
-// de poorten 80 en 443, en zet namen om via de eigen Resolver. Mailservers
-// worden nooit benaderd: de e-mailpunten komen uit DNS.
+// de poorten 80 en 443, en zet namen om via de eigen Resolver. De enige
+// uitzondering is DialSMTP: poort 25 van de mailservers van het gekeurde
+// domein, voor STARTTLS en niets anders.
 type Kiezer struct {
 	R        *Resolver
 	Timeout  time.Duration
 	Max      int32 // hooguit zoveel verbindingspogingen; 0 is onbeperkt
 	pogingen atomic.Int32
+
+	// Poort 25, alleen voor de STARTTLS-meting (mailtls.go): naar adressen
+	// van de mailservers van het gekeurde domein, hooguit maxSMTP keer.
+	mu        sync.Mutex
+	mailNamen map[string]bool
+	smtp      atomic.Int32
+}
+
+// maxSMTP: zoveel sessies op poort 25 per scan (twee mailservers, drie
+// sessies elk). Ze tellen apart van Max: het zijn andere servers dan de website.
+const maxSMTP = 6
+
+// ErrGeenMailserver: DialSMTP naar een naam die geen mailserver van het
+// gekeurde domein is, of naar een adres dat niet bij die naam hoort.
+var ErrGeenMailserver = errors.New("geen mailserver van dit domein")
+
+// StaMailToe zet de namen waarmee DialSMTP mag verbinden: de MX-namen van
+// het gekeurde domein.
+func (k *Kiezer) StaMailToe(namen []string) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	k.mailNamen = map[string]bool{}
+	for _, n := range namen {
+		k.mailNamen[strings.ToLower(n)] = true
+	}
+}
+
+// controleSMTP: zoals controle, maar alleen poort 25.
+func controleSMTP(_, adres string, _ syscall.RawConn) error {
+	ap, err := netip.ParseAddrPort(adres)
+	if err != nil || !Publiek(ap.Addr()) {
+		return ErrNietPubliek
+	}
+	if ap.Port() != 25 {
+		return fmt.Errorf("poort %d: %w", ap.Port(), ErrNietPubliek)
+	}
+	return nil
+}
+
+// DialSMTP verbindt met poort 25 van één adres van een mailserver. De naam
+// moet met StaMailToe zijn toegestaan en het adres moet een van zijn
+// publieke adressen zijn.
+func (k *Kiezer) DialSMTP(ctx context.Context, naam string, a netip.Addr) (net.Conn, error) {
+	k.mu.Lock()
+	mag := k.mailNamen[strings.ToLower(naam)]
+	k.mu.Unlock()
+	if !mag {
+		return nil, ErrGeenMailserver
+	}
+	v4, v6 := k.Adressen(ctx, naam)
+	if !slices.Contains(v4, a) && !slices.Contains(v6, a) {
+		return nil, ErrGeenMailserver
+	}
+	if k.smtp.Add(1) > maxSMTP {
+		return nil, ErrBudget
+	}
+	d := &net.Dialer{Timeout: k.Timeout, Control: controleSMTP}
+	return d.DialContext(ctx, "tcp", net.JoinHostPort(a.String(), "25"))
 }
 
 func (k *Kiezer) mag() error {

@@ -42,17 +42,12 @@ func daneWebOordeel(host string, rrs []dns.RR, ondertekend bool, keten []*x509.C
 	if len(keten) == 0 {
 		return punt(id, tech, Fout, titel, "We kregen geen certificaat om met het DANE-record te vergelijken.").met(gezien)
 	}
-	blad := false // er staat een record voor het certificaat zelf (gebruik 1 of 3)
-	for _, t := range tlsa {
-		if t.Usage == 1 || t.Usage == 3 {
-			blad = true
-		}
-		if tlsaPast(t, keten) {
-			return punt(id, tech, Goed, titel,
-				"Je website heeft een DANE-record dat klopt met het certificaat. Software die DANE controleert, weet zo zeker dat hij met de echte website praat.").met(gezien).metDetail(detail...)
-		}
+	past, teVergelijken := daneVergelijk(tlsa, keten)
+	if past {
+		return punt(id, tech, Goed, titel,
+			"Je website heeft een DANE-record dat klopt met het certificaat. Software die DANE controleert, weet zo zeker dat hij met de echte website praat.").met(gezien).metDetail(detail...)
 	}
-	if !blad {
+	if !teVergelijken {
 		// Gebruik 0 of 2 wijst vaak naar het basiscertificaat, en dat stuurt
 		// een server meestal niet mee. Dan kunnen we het niet vergelijken.
 		return punt(id, tech, Fout, titel, "Je DANE-record wijst naar een certificaat hoger in de keten dat je server niet meestuurt, dus we konden het niet vergelijken.").met(gezien).metDetail(detail...)
@@ -60,6 +55,22 @@ func daneWebOordeel(host string, rrs []dns.RR, ondertekend bool, keten []*x509.C
 	return punt(id, tech, Slecht, "Het DANE-record klopt niet met het certificaat",
 		"Je website heeft een DANE-record, maar dat past niet bij het certificaat dat je server laat zien. Software die DANE controleert, weigert dan de verbinding. Dit gebeurt vaak als het certificaat is vernieuwd en het record niet.").
 		met(gezien).metDetail(detail...)
+}
+
+// daneVergelijk: past een van de records bij de keten? teVergelijken is
+// false als er alleen records zijn voor een certificaat hoger in de keten
+// (gebruik 0 of 2) en geen daarvan past: dat is vaak het basiscertificaat,
+// en dat stuurt een server meestal niet mee.
+func daneVergelijk(tlsa []*dns.TLSA, keten []*x509.Certificate) (past, teVergelijken bool) {
+	for _, t := range tlsa {
+		if t.Usage == 1 || t.Usage == 3 {
+			teVergelijken = true
+		}
+		if tlsaPast(t, keten) {
+			return true, true
+		}
+	}
+	return false, teVergelijken
 }
 
 // tlsaPast: past het record bij het blad (gebruik 1 en 3) of bij een van de

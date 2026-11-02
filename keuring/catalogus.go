@@ -35,6 +35,8 @@ var nieuwePunten = []catalogusPunt{
 	{"mail", "mx-dnssec", "DNSSEC · MX", "Mailserver-domein ondertekend"},
 	{"mail", "mta-sts-mx", "MTA-STS mx", "MTA-STS klopt met je mailservers"},
 	{"mail", "rpki-mail", "RPKI · MX", "Route naar je mailserver beveiligd"},
+	{"mail", "starttls", "STARTTLS", "Mail versleuteld afgeleverd"},
+	{"mail", "mx-cert", "X.509 · MX", "Certificaat van de mailserver klopt"},
 
 	{"domein", "caa-ca", "CAA · issuer", "CAA past bij je certificaat"},
 	{"domein", "txt-schoon", "TXT", "DNS-regels zonder verborgen tekens"},

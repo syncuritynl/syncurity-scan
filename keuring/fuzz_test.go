@@ -1,8 +1,10 @@
 package keuring
 
 import (
+	"bufio"
 	"bytes"
 	"net/netip"
+	"strings"
 	"testing"
 	"time"
 )
@@ -74,6 +76,19 @@ func FuzzCymru(f *testing.F) {
 	f.Fuzz(func(t *testing.T, txt string) {
 		if r, ok := leesCymru(txt, a); ok && (!r.prefix.Contains(a) || len(r.asns) == 0 || len(r.asns) > 8) {
 			t.Errorf("%q gaf %+v", txt, r)
+		}
+	})
+}
+
+// Het antwoord van een mailserver: geen paniek, en nooit meer dan de grens.
+func FuzzSMTP(f *testing.F) {
+	for _, s := range []string{"220 klaar\r\n", "250-a\r\n250-STARTTLS\r\n250 c\r\n", "250\r\n", "25", "\r\n"} {
+		f.Add(s)
+	}
+	f.Fuzz(func(t *testing.T, in string) {
+		code, regels, err := leesSMTP(bufio.NewReaderSize(strings.NewReader(in), smtpMaxRegel))
+		if err == nil && (code < 200 || code > 599 || len(regels) == 0 || len(regels) > smtpMaxRegels) {
+			t.Errorf("%q gaf %d %d", in, code, len(regels))
 		}
 	})
 }

@@ -43,11 +43,14 @@ func (k *keurder) mail(ctx context.Context) Groep {
 			punt("mta-sts", "MTA-STS", NVT, "Mail komt versleuteld aan", reden),
 			punt("tls-rpt", "TLS-RPT", NVT, "Meldingen over versleuteling", reden),
 			punt("dane", "DANE", NVT, "Mailserver te controleren via DNSSEC", reden),
-			punt("rpki-mail", "RPKI · MX", NVT, "Route naar je mailserver beveiligd", reden))
+			punt("rpki-mail", "RPKI · MX", NVT, "Route naar je mailserver beveiligd", reden),
+			punt("starttls", "STARTTLS", NVT, "Mail versleuteld afgeleverd", reden),
+			punt("mx-cert", "X.509 · MX", NVT, "Certificaat van de mailserver klopt", reden))
 		g.Punten = append(g.Punten, stsMX(nil, "", nil), k.mxGeldig(ctx, nil), k.mxDNSSEC(ctx, nil))
 		return g
 	}
-	dane := k.dane(ctx, mx)
+	ms, msFout := k.mailTLS(ctx)
+	dane := k.dane(ctx, mx, ms)
 	sts := k.mtaSTS(ctx)
 	if sts.Status == Matig && dane.Status == Goed {
 		// DANE dwingt versleuteling ook af, en sterker: met DNSSEC in plaats van
@@ -60,7 +63,8 @@ func (k *keurder) mail(ctx context.Context) Groep {
 	mode, patronen := k.stand.stsMode, k.stand.stsMX
 	k.mu.Unlock()
 	g.Punten = append(g.Punten, stsMX(mx, mode, patronen), k.mxGeldig(ctx, mx), k.mxDNSSEC(ctx, mx),
-		k.rpkiPunt(ctx, "rpki-mail", "RPKI · MX", "Route naar je mailserver beveiligd", "je mailservers", eerste(k.mxOpVoorkeur(ctx), 2)))
+		k.rpkiPunt(ctx, "rpki-mail", "RPKI · MX", "Route naar je mailserver beveiligd", "je mailservers", eerste(k.mxOpVoorkeur(ctx), 2)),
+		starttlsPunt(ms, msFout, leverancier(mx, mailLeveranciers)), mxCert(ms, msFout, nil))
 	return g
 }
 
@@ -404,15 +408,19 @@ func (k *keurder) tlsRPT(ctx context.Context) Punt {
 		"Er is geen adres voor meldingen als mail naar jou niet versleuteld kon worden afgeleverd.")
 }
 
-func (k *keurder) dane(ctx context.Context, mx []string) Punt {
+func (k *keurder) dane(ctx context.Context, mx []string, ms []mxMeting) Punt {
 	met := 0
-	var detail []string
+	var detail, klopt []string
 	for _, h := range mx {
 		rrs, ad, _, _ := k.r.Records(ctx, "_25._tcp."+h, dns.TypeTLSA)
 		switch {
 		case len(rrs) > 0 && ad:
 			met++
 			detail = append(detail, h+": TLSA aanwezig en ondertekend")
+			if r := daneMX(h, rrs, ms); r != "" {
+				detail = append(detail, r)
+				klopt = append(klopt, h)
+			}
 		case len(rrs) > 0:
 			detail = append(detail, h+": TLSA aanwezig, maar niet ondertekend met DNSSEC (telt niet)")
 		default:
@@ -422,6 +430,10 @@ func (k *keurder) dane(ctx context.Context, mx []string) Punt {
 	detail = lijstje(detail, maxDetail)
 	gezien := fmt.Sprintf("%d van de %d mailservers", met, len(mx))
 	switch {
+	case len(klopt) > 0:
+		return punt("dane", "DANE", Slecht, "Het DANE-record klopt niet met je mailserver",
+			"Het DANE-record van je mailserver past niet bij het certificaat dat die laat zien. Mailservers die DANE controleren, weigeren dan mail aan jou. Dit gebeurt vaak als het certificaat is vernieuwd en het record niet.").
+			met("Klopt niet voor: " + strings.Join(klopt, ", ")).metDetail(detail...)
 	case met == len(mx):
 		return punt("dane", "DANE", Goed, "Je mailserver is te controleren via DNSSEC",
 			"Andere mailservers kunnen controleren dat ze echt met jouw mailserver praten, en niet met een nagemaakte.").met(gezien).metDetail(detail...)
@@ -432,6 +444,27 @@ func (k *keurder) dane(ctx context.Context, mx []string) Punt {
 		return punt("dane", "DANE", Matig, "Je mailserver is niet te controleren via DNSSEC",
 			"Met DANE kunnen andere mailservers controleren dat ze met de echte praten. Veel mailleveranciers ondersteunen het nog niet; vraag het na.").met(gezien).metDetail(detail...)
 	}
+}
+
+// daneMX: een regel voor het detail als het TLSA-record van mailserver h
+// niet past bij het certificaat dat we bij de STARTTLS-meting zagen; leeg als
+// het past of als we het niet konden vergelijken.
+func daneMX(h string, rrs []dns.RR, ms []mxMeting) string {
+	var tlsa []*dns.TLSA
+	for _, rr := range rrs {
+		if t, ok := rr.(*dns.TLSA); ok {
+			tlsa = append(tlsa, t)
+		}
+	}
+	for _, m := range ms {
+		if m.naam != h || len(m.keten) == 0 {
+			continue
+		}
+		if past, te := daneVergelijk(tlsa, m.keten); te && !past {
+			return h + ": het TLSA-record past niet bij het certificaat van de mailserver"
+		}
+	}
+	return ""
 }
 
 // tagLijst ontleedt "v=DMARC1; p=reject; pct=100" en "v=DKIM1; k=rsa; p=...".

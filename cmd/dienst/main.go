@@ -530,6 +530,7 @@ func main() {
 	tcp := flag.String("tcp", "", "alleen om te testen: luister op dit TCP-adres in plaats van de socket")
 	intern := flag.String("intern", "", "pad van de interne socket voor de inlogdienst, bijv. /run/keuring-intern/intern.sock (leeg: uit)")
 	tcpIntern := flag.String("tcp-intern", "", "alleen om te testen: de interne API op dit TCP-adres")
+	ehlo := flag.String("ehlo", "", "naam bij EHLO voor de STARTTLS-meting van mailservers (leeg: geen verbindingen met mailservers)")
 	data := flag.String("data", "/var/lib/syncurity-keuring-data", "map met rpki.txt.gz en hsts.txt.gz (leeg: uit, die punten zijn dan niet te meten)")
 	flag.Parse()
 	log.SetFlags(0) // het logboek van de procesbeheerder zet zelf de tijd erbij
@@ -539,6 +540,7 @@ func main() {
 	if *data != "" {
 		in.Lijsten = keuring.NieuweLijsten(*data)
 	}
+	in.EHLO = *ehlo
 	d := nieuweDienst(in)
 
 	srv := &http.Server{
