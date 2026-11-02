@@ -19,24 +19,12 @@ func mailNietTeMeten(id, tech, titel string, ms []mxMeting, err error) (Punt, []
 	}
 	var gemeten []mxMeting
 	var detail []string
-	leverancier, mislukt := "", false
 	for _, m := range ms {
-		if m.overgeslagen != "" {
-			leverancier = m.overgeslagen
-			detail = append(detail, m.naam+": niet benaderd ("+m.overgeslagen+")")
-			continue
-		}
 		if m.fout != nil {
-			mislukt = true
 			detail = append(detail, fmt.Sprintf("%s (%s): %v", m.naam, m.adres, m.fout))
 			continue
 		}
 		gemeten = append(gemeten, m)
-	}
-	if len(gemeten) == 0 && leverancier != "" && !mislukt {
-		return punt(id, tech, NVT, titel, fmt.Sprintf("Je mailserver is van %[1]s. %[1]s weigert controles als deze vanuit datacenters, dus we maken er geen verbinding mee. "+
-			"%[1]s levert mail versleuteld af (TLS 1.2 of nieuwer) en beheert het certificaat zelf; je hoeft hier niets te doen. De details zie je in de mailtest van internet.nl.", leverancier)).
-			met("Mailserver van " + leverancier).metDetail(detail...), nil, true
 	}
 	if len(gemeten) == 0 {
 		return punt(id, tech, Fout, titel,
