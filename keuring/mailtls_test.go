@@ -174,11 +174,11 @@ func TestLeesSMTP(t *testing.T) {
 func TestMXGeheugen(t *testing.T) {
 	nu := time.Now()
 	inGeheugen(mxMeting{naam: "mx.geheugen.nl", versie: tls.VersionTLS13}, nu)
-	if m, ok := uitGeheugen("mx.geheugen.nl", nu.Add(59*time.Minute)); !ok || m.versie != tls.VersionTLS13 {
-		t.Error("binnen het uur niet uit het geheugen")
+	if m, ok := uitGeheugen("mx.geheugen.nl", nu.Add(14*time.Minute)); !ok || m.versie != tls.VersionTLS13 {
+		t.Error("binnen 15 minuten niet uit het geheugen")
 	}
-	if _, ok := uitGeheugen("mx.geheugen.nl", nu.Add(61*time.Minute)); ok {
-		t.Error("na een uur nog uit het geheugen")
+	if _, ok := uitGeheugen("mx.geheugen.nl", nu.Add(16*time.Minute)); ok {
+		t.Error("na 15 minuten nog uit het geheugen")
 	}
 	for i := 0; i < mxGeheugenMax+10; i++ {
 		inGeheugen(mxMeting{naam: "vol" + strconv.Itoa(i) + ".nl"}, nu)

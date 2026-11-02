@@ -23,7 +23,8 @@ import (
 // Per scan hooguit twee mailservers (laagste voorkeur eerst), één adres elk,
 // en per mailserver drie sessies: de gewone (versie, suite, certificaat), één
 // met alleen TLS 1.0 en 1.1, en één eigen proef met alleen verouderde suites
-// (tlsproef.go). De uitkomst per mailserver bewaren we een uur, gedeeld door
+// (tlsproef.go). De uitkomst per mailserver bewaren we 15 minuten, net zo lang als
+// een uitslag (de naam van een mailserver bevat vaak de domeinnaam), gedeeld door
 // alle scans: veel domeinen delen dezelfde mailservers.
 
 const (
@@ -31,7 +32,7 @@ const (
 	smtpSessie     = 30 * time.Second // en zo lang duurt een sessie hooguit
 	smtpMaxRegel   = 1000             // RFC 5321 zegt 512; wat ruimte voor slordige servers
 	smtpMaxRegels  = 64
-	mxGeheugenTijd = time.Hour
+	mxGeheugenTijd = 15 * time.Minute
 	mxGeheugenMax  = 2000
 )
 
@@ -216,7 +217,7 @@ func meetMX(ctx context.Context, naam string, a netip.Addr, dial smtpDialer, ehl
 	return m
 }
 
-// mxGeheugen bewaart de meting per mailserver een uur, voor alle scans.
+// mxGeheugen bewaart de meting per mailserver 15 minuten, voor alle scans.
 var mxGeheugen = struct {
 	sync.Mutex
 	m map[string]mxBewaard
