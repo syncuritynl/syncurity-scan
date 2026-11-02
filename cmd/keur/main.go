@@ -17,13 +17,17 @@ func main() {
 	alsJSON := flag.Bool("json", false, "uitslag als JSON")
 	vol := flag.Bool("vol", false, "het volledige rapport: details, oplossingen en subdomeinen (alleen voor je eigen domein)")
 	resolver := flag.String("resolver", "1.1.1.1:53,9.9.9.9:53", "validerende resolvers, komma-gescheiden")
+	data := flag.String("data", "", "map met rpki.txt.gz en hsts.txt.gz (leeg: die punten zijn niet te meten)")
 	flag.Parse()
 	if flag.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "gebruik: keur [-json] [-vol] [-resolver host:poort] domein")
+		fmt.Fprintln(os.Stderr, "gebruik: keur [-json] [-vol] [-resolver host:poort] [-data map] domein")
 		os.Exit(2)
 	}
 	in := keuring.Standaard
 	in.Resolvers = strings.Split(*resolver, ",")
+	if *data != "" {
+		in.Lijsten = keuring.NieuweLijsten(*data)
+	}
 
 	var (
 		u   *keuring.Uitslag

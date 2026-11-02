@@ -14,10 +14,19 @@ import (
 func (k *keurder) modern(ctx context.Context, w *web) Groep {
 	return Groep{ID: "modern", Naam: "Modern internet", Kort: "Modern internet", Punten: []Punt{
 		k.webIPv6(ctx, w.host),
+		k.rpkiWeb(ctx, w.host),
 		k.mailIPv6(ctx),
 		k.nsIPv6(ctx),
 		http2(w),
 	}}
+}
+
+func (k *keurder) rpkiWeb(ctx context.Context, host string) Punt {
+	const id, tech, titel = "rpki-web", "RPKI · ROA", "Route naar je website beveiligd"
+	if host == "" {
+		return punt(id, tech, NVT, titel, geenWebsite)
+	}
+	return k.rpkiPunt(ctx, id, tech, titel, "je website", []string{host})
 }
 
 func (k *keurder) webIPv6(ctx context.Context, host string) Punt {

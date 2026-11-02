@@ -142,6 +142,7 @@ var uitleg = map[string]string{
 	"mta-sts": "mta-sts", "tls-rpt": "mta-sts", "dane": "mta-sts",
 	"dnssec": "dnssec", "dnssec-alg": "dnssec", "caa": "caa", "ns": "nameservers",
 	"ipv6-web": "ipv6", "ipv6-mail": "ipv6", "ipv6-ns": "ipv6",
+	"rpki-web": "ipv6", "rpki-mail": "ipv6", "rpki-ns": "ipv6",
 	"seo-titel": "vindbaar-in-google", "seo-beschrijving": "vindbaar-in-google", "seo-index": "vindbaar-in-google",
 	"seo-canonical": "vindbaar-in-google", "seo-sitemap": "vindbaar-in-google", "seo-h1": "vindbaar-in-google",
 	"seo-mobiel": "vindbaar-in-google", "seo-taal": "vindbaar-in-google", "seo-schema": "vindbaar-in-google",

@@ -8,6 +8,8 @@ type catalogusPunt struct {
 }
 
 var nieuwePunten = []catalogusPunt{
+	{"modern", "rpki-web", "RPKI · ROA", "Route naar je website beveiligd"},
+
 	{"verbinding", "cert-www", "X.509 · www", "Certificaat ook voor de naam met of zonder www"},
 	{"verbinding", "tls-dh", "DHE", "Sterke sleuteluitwisseling"},
 	{"verbinding", "tls-volgorde", "cipher order", "Server kiest de sterkste versleuteling"},
@@ -32,9 +34,11 @@ var nieuwePunten = []catalogusPunt{
 	{"mail", "mx-geldig", "MX", "Mailservers goed vastgelegd"},
 	{"mail", "mx-dnssec", "DNSSEC · MX", "Mailserver-domein ondertekend"},
 	{"mail", "mta-sts-mx", "MTA-STS mx", "MTA-STS klopt met je mailservers"},
+	{"mail", "rpki-mail", "RPKI · MX", "Route naar je mailserver beveiligd"},
 
 	{"domein", "caa-ca", "CAA · issuer", "CAA past bij je certificaat"},
 	{"domein", "txt-schoon", "TXT", "DNS-regels zonder verborgen tekens"},
+	{"domein", "rpki-ns", "RPKI · NS", "Route naar je nameservers beveiligd"},
 
 	{"seo", "seo-robots", "robots.txt", "robots.txt in orde"},
 	{"seo", "seo-links", "<a>", "Duidelijke linkteksten"},

@@ -42,7 +42,8 @@ func (k *keurder) mail(ctx context.Context) Groep {
 			punt("dkim", "DKIM", NVT, "Handtekening onder je mail", reden),
 			punt("mta-sts", "MTA-STS", NVT, "Mail komt versleuteld aan", reden),
 			punt("tls-rpt", "TLS-RPT", NVT, "Meldingen over versleuteling", reden),
-			punt("dane", "DANE", NVT, "Mailserver te controleren via DNSSEC", reden))
+			punt("dane", "DANE", NVT, "Mailserver te controleren via DNSSEC", reden),
+			punt("rpki-mail", "RPKI · MX", NVT, "Route naar je mailserver beveiligd", reden))
 		g.Punten = append(g.Punten, stsMX(nil, "", nil), k.mxGeldig(ctx, nil), k.mxDNSSEC(ctx, nil))
 		return g
 	}
@@ -58,7 +59,8 @@ func (k *keurder) mail(ctx context.Context) Groep {
 	k.mu.Lock()
 	mode, patronen := k.stand.stsMode, k.stand.stsMX
 	k.mu.Unlock()
-	g.Punten = append(g.Punten, stsMX(mx, mode, patronen), k.mxGeldig(ctx, mx), k.mxDNSSEC(ctx, mx))
+	g.Punten = append(g.Punten, stsMX(mx, mode, patronen), k.mxGeldig(ctx, mx), k.mxDNSSEC(ctx, mx),
+		k.rpkiPunt(ctx, "rpki-mail", "RPKI · MX", "Route naar je mailserver beveiligd", "je mailservers", eerste(k.mxOpVoorkeur(ctx), 2)))
 	return g
 }
 

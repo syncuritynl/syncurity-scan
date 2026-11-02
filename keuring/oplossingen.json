@@ -576,6 +576,24 @@
       ]
     }
   },
+  "rpki-web": {
+    "slecht": {
+      "wie": "je hostingpartij",
+      "stappen": [
+        "Laat je hostingpartij weten dat de route naar je website volgens RPKI ongeldig is, en stuur de adressen bij dit punt mee.",
+        "Vaak is het ROA-record (de vastgelegde route) verouderd of te streng, bijvoorbeeld een te korte maximale lengte; dat past de eigenaar van het netwerk aan.",
+        "Klopt het ROA-record wel, dan kondigt een ander netwerk jouw adressen aan: vraag dan meteen om uitzoeken."
+      ]
+    },
+    "matig": {
+      "wie": "je hostingpartij",
+      "stappen": [
+        "Vraag je hostingpartij of ze de route naar je website willen vastleggen met een ROA-record in RPKI.",
+        "Dit doet de eigenaar van het netwerk bij RIPE NCC of een andere registry; zelf hoef je niets te veranderen.",
+        "Vastleggen kost niets en is binnen een dag zichtbaar."
+      ]
+    }
+  },
   "ipv6-mail": {
     "matig": {
       "wie": "wie je e-mail beheert",
@@ -1175,6 +1193,24 @@
       ]
     }
   },
+  "rpki-mail": {
+    "slecht": {
+      "wie": "je mailleverancier",
+      "stappen": [
+        "Laat je mailleverancier weten dat de route naar je mailservers volgens RPKI ongeldig is, en stuur de adressen bij dit punt mee.",
+        "Vaak is het ROA-record (de vastgelegde route) verouderd of te streng, bijvoorbeeld een te korte maximale lengte; dat past de eigenaar van het netwerk aan.",
+        "Klopt het ROA-record wel, dan kondigt een ander netwerk jouw adressen aan: vraag dan meteen om uitzoeken."
+      ]
+    },
+    "matig": {
+      "wie": "je mailleverancier",
+      "stappen": [
+        "Vraag je mailleverancier of ze de route naar je mailservers willen vastleggen met een ROA-record in RPKI.",
+        "Dit doet de eigenaar van het netwerk bij RIPE NCC of een andere registry; zelf hoef je niets te veranderen.",
+        "Vastleggen kost niets en is binnen een dag zichtbaar."
+      ]
+    }
+  },
   "caa-ca": {
     "alle": {
       "wie": "wie je DNS beheert (vaak je hostingpartij of domeinleverancier)",
@@ -1190,6 +1226,24 @@
       "stappen": [
         "Open de genoemde TXT-regel en typ hem opnieuw in, zonder te plakken uit een tekstverwerker.",
         "Let op rechte aanhalingstekens en geen spaties of tekens aan het begin of eind."
+      ]
+    }
+  },
+  "rpki-ns": {
+    "slecht": {
+      "wie": "je DNS-leverancier",
+      "stappen": [
+        "Laat je DNS-leverancier weten dat de route naar je nameservers volgens RPKI ongeldig is, en stuur de adressen bij dit punt mee.",
+        "Vaak is het ROA-record (de vastgelegde route) verouderd of te streng, bijvoorbeeld een te korte maximale lengte; dat past de eigenaar van het netwerk aan.",
+        "Klopt het ROA-record wel, dan kondigt een ander netwerk jouw adressen aan: vraag dan meteen om uitzoeken."
+      ]
+    },
+    "matig": {
+      "wie": "je DNS-leverancier",
+      "stappen": [
+        "Vraag je DNS-leverancier of ze de route naar je nameservers willen vastleggen met een ROA-record in RPKI.",
+        "Dit doet de eigenaar van het netwerk bij RIPE NCC of een andere registry; zelf hoef je niets te veranderen.",
+        "Vastleggen kost niets en is binnen een dag zichtbaar."
       ]
     }
   },

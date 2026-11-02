@@ -89,6 +89,9 @@ func (k *keurder) feiten(ctx context.Context, w *web) []Feit {
 	if len(ns) > 0 {
 		f = append(f, Feit{"DNS", leverancier(ns, dnsLeveranciers)})
 	}
+	if w.preload != "" {
+		f = append(f, Feit{"HSTS-preload", w.preload})
+	}
 	if w.host == "" {
 		f = append(f, Feit{"Website", "geen website gevonden"})
 		return f

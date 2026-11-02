@@ -25,6 +25,7 @@ type web struct {
 	verouder   string         // geaccepteerde verouderde suite (CBC, RSA-sleuteluitwisseling)
 	verouderID uint16         // en het nummer daarvan
 	oudeTLS    oudeTLS        // eigen TLS 1.2-proef: DH, volgorde, compressie, heronderhandeling, SHA-1
+	preload    string         // op de HSTS-preloadlijst: "ja", "ja, via x", "nee"; leeg als de lijst er niet is
 	suitesAlle []string       // alle geaccepteerde zwakke en verouderde suites (alleen volledige keuring)
 	eerste     *http.Response // https://host/ zonder doorverwijzingen te volgen
 	httpLoc    string         // waar http://host/ naartoe stuurt

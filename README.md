@@ -49,6 +49,11 @@ go test ./...
 Scan alleen domeinen waarvoor je dat mag. Het volledige rapport (`-vol`) is
 bedoeld voor je eigen domein.
 
+Voor de punten over RPKI en de HSTS-preloadlijst leest de scanner twee
+lijsten van schijf (`-data map`, met `rpki.txt.gz` en `hsts.txt.gz`; het
+formaat staat in `keuring/lijsten.go`). Zonder die lijsten zijn die punten
+niet te meten.
+
 ## Na te bouwen
 
 Onder elk rapport op syncurity.nl staat met welke versie het gemaakt is: de

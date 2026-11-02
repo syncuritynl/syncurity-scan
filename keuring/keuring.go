@@ -17,6 +17,7 @@ type Instellingen struct {
 	Timeout   time.Duration // per verbinding of DNS-vraag
 	Totaal    time.Duration // de hele keuring
 	UserAgent string
+	Lijsten   *Lijsten // RPKI en HSTS-preload van schijf; nil: die punten zijn niet te meten
 }
 
 // Standaard is wat de dienst gebruikt als er niets anders is opgegeven.
@@ -38,7 +39,8 @@ type keurder struct {
 	vrij    *http.Client // volgt https-doorverwijzingen naar elk domein
 	timeout time.Duration
 	ua      string // dezelfde User-Agent als in de http-clients
-	vol     bool   // volledige keuring: een paar extra metingen voor de details
+	lijsten *Lijsten
+	vol     bool // volledige keuring: een paar extra metingen voor de details
 
 	w     *web // wat we van de website haalden, voor de voorstellen
 	mu    sync.Mutex
@@ -135,6 +137,7 @@ func keur(ctx context.Context, domein string, r *Resolver, in Instellingen, vol 
 		eenStap: &http.Client{Transport: rt, Timeout: in.Timeout, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }},
 		timeout: in.Timeout,
 		ua:      in.UserAgent,
+		lijsten: in.Lijsten,
 		vol:     vol,
 	}
 
@@ -150,6 +153,9 @@ func keur(ctx context.Context, domein string, r *Resolver, in Instellingen, vol 
 	start(2, func() Groep { return k.mail(ctx) })
 	start(3, func() Groep { return k.domeinnaam(ctx) })
 	w := k.haalWeb(ctx, k.webhost(ctx))
+	if h, err := k.lijsten.HSTS(); err == nil {
+		w.preload = h.preload(k.domein)
+	}
 	k.w = w
 	start(0, func() Groep { return k.verbinding(ctx, w) })
 	start(1, func() Groep { return k.instellingen(ctx, w) })

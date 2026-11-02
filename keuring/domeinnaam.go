@@ -17,6 +17,7 @@ func (k *keurder) domeinnaam(ctx context.Context) Groep {
 		k.caa(ctx),
 		k.nameservers(ctx),
 		k.txtSchoon(ctx),
+		k.rpkiPunt(ctx, "rpki-ns", "RPKI · NS", "Route naar je nameservers beveiligd", "je nameservers", eerste(k.nsNamen(ctx), 2)),
 	}}
 }
 

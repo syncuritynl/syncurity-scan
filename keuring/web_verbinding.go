@@ -52,7 +52,7 @@ func (k *keurder) verbinding(ctx context.Context, w *web) Groep {
 		return g
 	}
 	g.Punten = []Punt{
-		tlsModern(w), tlsOud(w), suites(w), tlsDH(w.oudeTLS), tlsVolgorde(w.oudeTLS), tlsOpties(w.oudeTLS), tlsHash(w.oudeTLS), certificaat(w), certSleutel(w), k.https(w), hsts(w), certWWW(w), tlsAdressen(w), k.daneWeb(ctx, w),
+		tlsModern(w), tlsOud(w), suites(w), tlsDH(w.oudeTLS), tlsVolgorde(w.oudeTLS), tlsOpties(w.oudeTLS), tlsHash(w.oudeTLS), certificaat(w), certSleutel(w), k.https(w), metPreload(hsts(w), w.preload), certWWW(w), tlsAdressen(w), k.daneWeb(ctx, w),
 	}
 	return g
 }
@@ -244,6 +244,15 @@ func (k *keurder) https(w *web) Punt {
 		return punt("https", "301 → https", Slecht, "Niet altijd via https",
 			"Wie http:// typt of op een oude link klikt, blijft op de onbeveiligde versie van je site.").met(gezien).metDetail(detail...)
 	}
+}
+
+// metPreload zet erbij dat het domein op de HSTS-preloadlijst van de
+// browsers staat. We raden het niet aan: eraf halen duurt maanden.
+func metPreload(p Punt, preload string) Punt {
+	if strings.HasPrefix(preload, "ja") {
+		p.Gezien = strings.TrimPrefix(p.Gezien+" · ", " · ") + "op de HSTS-preloadlijst" + strings.TrimPrefix(preload, "ja")
+	}
+	return p
 }
 
 // hsts kijkt naar het antwoord van de naam zelf, niet naar de pagina na een

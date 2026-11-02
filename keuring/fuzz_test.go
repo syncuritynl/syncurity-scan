@@ -2,6 +2,7 @@ package keuring
 
 import (
 	"bytes"
+	"net/netip"
 	"testing"
 	"time"
 )
@@ -59,6 +60,20 @@ func FuzzTLSAntwoord(f *testing.F) {
 		a, err := leesAntwoord(bytes.NewReader(data))
 		if err == nil && a.dhBits > 8*len(data) {
 			t.Errorf("p van %d bits uit %d bytes", a.dhBits, len(data))
+		}
+	})
+}
+
+// Het antwoord van Team Cymru komt via DNS van buiten: geen paniek, en een
+// geaccepteerd prefix bevat altijd het adres.
+func FuzzCymru(f *testing.F) {
+	for _, s := range []string{"31898 | 92.5.224.0/20 | SE | ripencc | 2007-06-28", "13335 209242 | 92.5.224.0/20 | US |", "| |", "1 | ::/0 |"} {
+		f.Add(s)
+	}
+	a := netip.MustParseAddr("92.5.232.178")
+	f.Fuzz(func(t *testing.T, txt string) {
+		if r, ok := leesCymru(txt, a); ok && (!r.prefix.Contains(a) || len(r.asns) == 0 || len(r.asns) > 8) {
+			t.Errorf("%q gaf %+v", txt, r)
 		}
 	})
 }
