@@ -2,6 +2,7 @@ package keuring
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -16,7 +17,7 @@ import (
 
 const geenWebsite = "We vonden geen website op deze domeinnaam, dus dit punt telt niet mee."
 
-func (k *keurder) verbinding(w *web) Groep {
+func (k *keurder) verbinding(ctx context.Context, w *web) Groep {
 	g := Groep{ID: "verbinding", Naam: "Je website: de verbinding", Kort: "Verbinding"}
 	if w.host == "" {
 		for _, p := range []struct{ id, tech, titel string }{
@@ -42,11 +43,12 @@ func (k *keurder) verbinding(w *web) Groep {
 			punt("hsts", "HSTS", Fout, "De browser onthoudt https", "Zonder https niet te meten."),
 			certWWW(w),
 			punt("tls-adressen", "IPv4 · IPv6", Fout, "Elk adres even veilig", "Zonder https niet te meten."),
+			punt("dane-web", "TLSA · 443", Fout, "DANE voor de website", "Zonder https niet te meten."),
 		}
 		return g
 	}
 	g.Punten = []Punt{
-		tlsModern(w), tlsOud(w), suites(w), certificaat(w), certSleutel(w), k.https(w), hsts(w), certWWW(w), tlsAdressen(w),
+		tlsModern(w), tlsOud(w), suites(w), certificaat(w), certSleutel(w), k.https(w), hsts(w), certWWW(w), tlsAdressen(w), k.daneWeb(ctx, w),
 	}
 	return g
 }

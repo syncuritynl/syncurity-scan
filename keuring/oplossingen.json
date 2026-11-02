@@ -972,6 +972,24 @@
       ]
     }
   },
+  "dane-web": {
+    "slecht": {
+      "wie": "wie je domeinnaam beheert",
+      "stappen": [
+        "Vraag je hostingpartij welk certificaat je website nu gebruikt, en laat het TLSA-record op _443._tcp opnieuw uitrekenen.",
+        "Zet het nieuwe record naast het oude in je DNS-instellingen en haal het oude pas na een dag weg.",
+        "Gebruik je DANE niet bewust, haal het TLSA-record dan weg: het is optioneel.",
+        "Spreek af dat het record bij elke vernieuwing van het certificaat mee verandert, of maak het record voor de sleutel (selector 1) en houd de sleutel gelijk."
+      ]
+    },
+    "matig": {
+      "wie": "wie je domeinnaam beheert",
+      "stappen": [
+        "Zet DNSSEC aan voor je domeinnaam bij je DNS-leverancier; zonder DNSSEC doet een TLSA-record niets.",
+        "Wil je DNSSEC niet, haal het TLSA-record dan weg."
+      ]
+    }
+  },
   "software": {
     "alle": {
       "wie": "je webbouwer of jijzelf",

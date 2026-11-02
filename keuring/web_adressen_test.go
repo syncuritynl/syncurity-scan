@@ -102,7 +102,7 @@ func TestTLSAdressen(t *testing.T) {
 func TestTLSAdressenZonderHTTPS(t *testing.T) {
 	k := &keurder{domein: "voorbeeld.nl"}
 	for _, w := range []*web{{}, {host: "voorbeeld.nl", fout: errors.New("geen handdruk")}} {
-		g := k.verbinding(w)
+		g := k.verbinding(context.Background(), w)
 		gevonden := false
 		for _, p := range g.Punten {
 			if p.ID == "tls-adressen" {

@@ -10,6 +10,7 @@ type catalogusPunt struct {
 var nieuwePunten = []catalogusPunt{
 	{"verbinding", "cert-www", "X.509 · www", "Certificaat ook voor de naam met of zonder www"},
 	{"verbinding", "tls-adressen", "IPv4 · IPv6", "Elk adres even veilig"},
+	{"verbinding", "dane-web", "TLSA · 443", "DANE voor de website"},
 
 	{"instellingen", "software", "WordPress", "WordPress bijgewerkt"},
 	{"instellingen", "bibliotheken", "retire.js", "Scripts zonder bekende lekken"},

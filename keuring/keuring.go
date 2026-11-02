@@ -150,7 +150,7 @@ func keur(ctx context.Context, domein string, r *Resolver, in Instellingen, vol 
 	start(3, func() Groep { return k.domeinnaam(ctx) })
 	w := k.haalWeb(ctx, k.webhost(ctx))
 	k.w = w
-	start(0, func() Groep { return k.verbinding(w) })
+	start(0, func() Groep { return k.verbinding(ctx, w) })
 	start(1, func() Groep { return k.instellingen(ctx, w) })
 	start(4, func() Groep { return k.modern(ctx, w) })
 	start(5, func() Groep { return k.seo(w) })
