@@ -1,7 +1,7 @@
 # Syncurity Scan
 
 De scanner achter [syncurity.nl](https://syncurity.nl): een gratis check van je
-website, je e-mail en je domeinnaam. Honderd controles in tien onderdelen:
+website, je e-mail en je domeinnaam. Ruim honderd controles in tien onderdelen:
 
 - **verbinding**: TLS 1.3, certificaat, https en HSTS
 - **beveiliging en privacy**: beveiligingsheaders, trackers, verouderde software
@@ -82,7 +82,7 @@ Een lek gevonden? Meld het niet in een issue, maar volgens
 ## In English
 
 The scanner behind [syncurity.nl](https://syncurity.nl): a free, passive check
-of a website, its e-mail and its domain name, with 100 checks in ten groups,
+of a website, its e-mail and its domain name, with over 100 checks in ten groups,
 explained in plain Dutch. It only looks at what is public (ports 80 and 443,
 DNS via a validating resolver), never scans ports, never tries to log in and
 never connects to mail servers. Licensed under the AGPL-3.0. Report security

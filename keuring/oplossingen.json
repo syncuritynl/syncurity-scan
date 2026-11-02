@@ -1205,6 +1205,36 @@
       ]
     }
   },
+  "snel-lettertypen": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zet in elke @font-face-regel van je stylesheet de regel font-display: swap.",
+        "Laad je lettertypen bij Google Fonts, zet dan &display=swap achter het adres van het lettertype.",
+        "Gebruik je WordPress, kijk dan of je thema of een snelheidsplug-in een instelling voor font-display heeft."
+      ]
+    }
+  },
+  "snel-verkleind": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Laat je webbouwer de stylesheets verkleinen (minify): spaties, regeleinden en opmerkingen gaan eruit, de werking blijft gelijk.",
+        "De meeste bouwprogramma's en snelheidsplug-ins voor WordPress doen dit met één instelling.",
+        "Bekijk daarna je site in een browser en controleer of alles er nog hetzelfde uitziet."
+      ]
+    }
+  },
+  "snel-voorverbinden": {
+    "matig": {
+      "wie": "je webbouwer",
+      "stappen": [
+        "Zet voor de servers bij dit punt een regel in de head van je pagina, bijvoorbeeld <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>.",
+        "Kies de drie of vier belangrijkste: te veel vooraf verbinden werkt averechts.",
+        "Nog sneller: zet lettertypen en stylesheets op je eigen server, dan is er geen extra verbinding nodig."
+      ]
+    }
+  },
   "bedrijfsgegevens": {
     "alle": {
       "wie": "je webbouwer of jijzelf",

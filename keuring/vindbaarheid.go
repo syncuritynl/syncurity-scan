@@ -491,7 +491,8 @@ func (k *keurder) snelheid(w *web) Groep {
 		return g
 	}
 	g.Punten = []Punt{snelTTFB(w), snelGrootte(w), snelCompressie(w), snelCache(w), snelBlokkerend(w), snelAfbeeldingen(w), snelExtern(k.domein, w),
-		snelAfmetingen(w), snelLCP(w), snelBestanden(w), snelGewicht(w), snelOudeScripts(w)}
+		snelAfmetingen(w), snelLCP(w), snelBestanden(w), snelGewicht(w), snelOudeScripts(w),
+		snelLettertypen(w), snelVerkleind(w), snelVoorverbinden(w)}
 	return g
 }
 

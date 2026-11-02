@@ -41,6 +41,9 @@ var nieuwePunten = []catalogusPunt{
 	{"snelheid", "snel-onderdelen", "DOM · requests", "Niet te veel onderdelen"},
 	{"snelheid", "snel-gewicht", "Content-Length", "Afbeeldingen niet te zwaar"},
 	{"snelheid", "snel-overbodig", "analytics.js", "Geen overbodige scripts"},
+	{"snelheid", "snel-lettertypen", "font-display", "Tekst meteen zichtbaar"},
+	{"snelheid", "snel-verkleind", "minify", "Bestanden verkleind"},
+	{"snelheid", "snel-voorverbinden", "preconnect", "Andere servers op tijd verbonden"},
 
 	{"vertrouwen", "bedrijfsgegevens", "art. 3:15d BW", "Bedrijfsgegevens compleet"},
 	{"vertrouwen", "voorwaarden", "algemene voorwaarden", "Algemene voorwaarden te vinden"},

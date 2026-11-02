@@ -38,6 +38,10 @@ type paginaInfo struct {
 	tekst        string // zichtbare tekst, ingekort
 	bronnen      []string
 	stijlen      []string    // href van elke <link rel=stylesheet>, in volgorde
+	stijlBlokken []string    // inhoud van de <style>-blokken, samen hooguit maxStijl
+	kritiek      []string    // stylesheets en scripts zonder async/defer in de head: nodig voor het eerste beeld
+	voorverbind  []string    // href van <link rel=preconnect> en rel=preload: daar is de verbinding al open
+	dnsVooraf    []string    // href van <link rel=dns-prefetch>
 	x            paginaExtra // toegankelijkheid, privacy, software (html_extra.go)
 }
 
@@ -51,6 +55,7 @@ func ontleed(body []byte) paginaInfo {
 	}
 	p.geldig = true
 	var zicht strings.Builder
+	stijlLengte := 0
 	var loop func(n *html.Node, inHead, verborgen bool)
 	loop = func(n *html.Node, inHead, verborgen bool) {
 		if n.Type == html.ElementNode {
@@ -84,9 +89,18 @@ func ontleed(body []byte) paginaInfo {
 				if strings.Contains(rel, "canonical") {
 					p.canonical = a["href"]
 				}
+				for _, r := range strings.Fields(rel) {
+					switch r {
+					case "preconnect", "preload":
+						p.voorverbind = append(p.voorverbind, a["href"])
+					case "dns-prefetch":
+						p.dnsVooraf = append(p.dnsVooraf, a["href"])
+					}
+				}
 				if strings.Contains(rel, "stylesheet") {
 					if inHead && a["media"] != "print" {
 						p.stijlbladen++
+						p.kritiek = append(p.kritiek, a["href"])
 					}
 					p.bronnen = append(p.bronnen, a["href"])
 					p.stijlen = append(p.stijlen, a["href"])
@@ -105,12 +119,19 @@ func ontleed(body []byte) paginaInfo {
 					_, defer_ := a["defer"]
 					if inHead && !async && !defer_ && typ != "module" {
 						p.blokkerendJS++
+						p.kritiek = append(p.kritiek, src)
 						if len(p.blokkerend) < maxDetail {
 							p.blokkerend = append(p.blokkerend, kort(src, 160))
 						}
 					}
 				}
-			case "style", "noscript", "template", "svg":
+			case "style":
+				verborgen = true
+				if css := tekstVan(n); stijlLengte+len(css) <= maxStijl {
+					p.stijlBlokken = append(p.stijlBlokken, css)
+					stijlLengte += len(css)
+				}
+			case "noscript", "template", "svg":
 				verborgen = true
 			case "h1":
 				p.h1++

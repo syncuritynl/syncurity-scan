@@ -1,4 +1,4 @@
-// Package keuring voert de gratis domeinscan van syncurity.nl uit: honderd
+// Package keuring voert de gratis domeinscan van syncurity.nl uit: ruim honderd
 // passieve controles op de website, de e-mail en de domeinnaam. Alles wat hier
 // gemeten wordt, kan iedereen op internet ook zien; er wordt niets geprobeerd.
 package keuring
@@ -161,6 +161,7 @@ var uitleg = map[string]string{
 	"seo-robots": "vindbaar-in-google", "seo-links": "vindbaar-in-google", "seo-omleidingen": "vindbaar-in-google",
 	"geo-profielen": "vindbaar-voor-ai", "geo-versheid": "vindbaar-voor-ai", "geo-schema": "vindbaar-voor-ai",
 	"snel-afmetingen": "snelheid", "snel-eerste": "snelheid", "snel-onderdelen": "snelheid", "snel-gewicht": "snelheid", "snel-overbodig": "snelheid",
+	"snel-lettertypen": "snelheid", "snel-verkleind": "snelheid", "snel-voorverbinden": "snelheid",
 	"bedrijfsgegevens": "privacy-en-kvk", "voorwaarden": "privacy-en-kvk",
 	"vooraf": "cookies-en-trackers", "opname": "cookies-en-trackers", "ingesloten": "cookies-en-trackers",
 	"a11y-knoppen": "toegankelijkheid", "a11y-links": "toegankelijkheid", "a11y-labels": "toegankelijkheid", "a11y-zoom": "toegankelijkheid",

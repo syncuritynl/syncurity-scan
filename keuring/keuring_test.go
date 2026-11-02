@@ -95,8 +95,8 @@ func TestElkPuntHeeftUitleg(t *testing.T) {
 	for _, p := range nieuwePunten {
 		ids = append(ids, p.ID)
 	}
-	if len(ids) != 101 {
-		t.Fatalf("%d punten in de test, verwacht 101", len(ids))
+	if len(ids) != 104 {
+		t.Fatalf("%d punten in de test, verwacht 104", len(ids))
 	}
 	if len(uitleg) != len(ids) {
 		t.Errorf("de uitleg-tabel heeft %d punten, de test %d", len(uitleg), len(ids))
