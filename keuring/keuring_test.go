@@ -260,3 +260,19 @@ func TestNaarSecurityTxt(t *testing.T) {
 		}
 	}
 }
+
+// Elk punt linkt naar een pagina die bestaat in de kennisbank (/uitleg/).
+// Komt er een pagina bij, zet hem dan hier en op de site.
+func TestUitlegPaginasBestaan(t *testing.T) {
+	paginas := map[string]bool{}
+	for _, s := range strings.Fields(`beveiligingsheaders caa cookies-en-trackers dkim dmarc dnssec https-en-hsts ipv6
+		mixed-content mta-sts nameservers privacy-en-kvk rpki security-txt snelheid spf ssl-certificaat starttls tls
+		toegankelijkheid verouderde-software vindbaar-in-google vindbaar-voor-ai`) {
+		paginas[s] = true
+	}
+	for id, slug := range uitleg {
+		if !paginas[slug] {
+			t.Errorf("%s linkt naar /uitleg/%s/, en die pagina is er niet", id, slug)
+		}
+	}
+}
