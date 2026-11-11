@@ -454,16 +454,16 @@ func TestOpnieuwScannen(t *testing.T) {
 	if w := postScan(h, "voorbeeld.nl", "192.0.2.1"); w.Code != http.StatusSeeOther || keer.Load() != 1 || laatsteOpnieuw.Load() {
 		t.Fatalf("eerste scan: %d, %d keer, opnieuw %v", w.Code, keer.Load(), laatsteOpnieuw.Load())
 	}
-	if b := get(h, "/scan/voorbeeld.nl").Body.String(); !strings.Contains(b, "Opnieuw scannen kan vanaf") || strings.Contains(b, `name="opnieuw"`) {
-		t.Error("een verse uitslag toont de knop, of zegt niet vanaf wanneer het kan")
+	if b := get(h, "/scan/voorbeeld.nl").Body.String(); !strings.Contains(b, "Opnieuw scannen kan vanaf") || !strings.Contains(b, `type="submit" disabled`) || !strings.Contains(b, `data-over="12`) {
+		t.Error("bij een verse uitslag staat de knop niet uit, of zonder wachttijd (data-over)")
 	}
 	if w := opnieuw("192.0.2.1"); w.Code != http.StatusSeeOther || keer.Load() != 1 {
 		t.Errorf("te vroeg opnieuw: %d, %d keer (verwacht geen nieuwe scan)", w.Code, keer.Load())
 	}
 
 	maakOud(opnieuwNa + time.Second)
-	if b := get(h, "/scan/voorbeeld.nl").Body.String(); !strings.Contains(b, `name="opnieuw" value="1"`) || !strings.Contains(b, `name="domein" value="voorbeeld.nl"`) {
-		t.Error("na opnieuwNa staat de knop er niet, of zonder domeinnaam")
+	if b := get(h, "/scan/voorbeeld.nl").Body.String(); !strings.Contains(b, `name="opnieuw" value="1"`) || !strings.Contains(b, `name="domein" value="voorbeeld.nl"`) || strings.Contains(b, "disabled") || strings.Contains(b, "data-over") {
+		t.Error("na opnieuwNa werkt de knop niet, of zonder domeinnaam")
 	}
 	if postScan(h, "voorbeeld.nl", "192.0.2.1"); keer.Load() != 1 {
 		t.Errorf("een gewone scan negeert de bewaarde uitslag (%d keer)", keer.Load())
