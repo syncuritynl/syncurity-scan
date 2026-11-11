@@ -2,7 +2,7 @@ module syncurity.nl/keuring
 
 go 1.26.8
 
-toolchain go1.26.10
+toolchain go1.26.11
 
 require (
 	github.com/miekg/dns v1.1.73
