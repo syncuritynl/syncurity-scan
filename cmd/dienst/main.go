@@ -257,8 +257,8 @@ type rapportPagina struct {
 	Rest                                                   int
 	U                                                      *keuring.Uitslag
 	// Opnieuw scannen: de knop werkt als de uitslag ouder is dan opnieuwNa;
-	// anders staat hij uit, met vanaf hoe laat het kan, en zet scan.js hem na
-	// OpnieuwOver seconden vanzelf aan. OpnieuwInvoer gaat mee in het formulier.
+	// anders staat hij uit, met vanaf hoe laat het kan, en telt scan.js de
+	// OpnieuwOver seconden af in de knop. OpnieuwInvoer gaat mee in het formulier.
 	OpnieuwKan                  bool
 	OpnieuwOver                 int
 	OpnieuwVanaf, OpnieuwInvoer string

@@ -454,7 +454,7 @@ func TestOpnieuwScannen(t *testing.T) {
 	if w := postScan(h, "voorbeeld.nl", "192.0.2.1"); w.Code != http.StatusSeeOther || keer.Load() != 1 || laatsteOpnieuw.Load() {
 		t.Fatalf("eerste scan: %d, %d keer, opnieuw %v", w.Code, keer.Load(), laatsteOpnieuw.Load())
 	}
-	if b := get(h, "/scan/voorbeeld.nl").Body.String(); !strings.Contains(b, "Opnieuw scannen kan vanaf") || !strings.Contains(b, `type="submit" disabled`) || !strings.Contains(b, `data-over="12`) {
+	if b := get(h, "/scan/voorbeeld.nl").Body.String(); !strings.Contains(b, `type="submit" disabled>Scan opnieuw om `) || !strings.Contains(b, `data-over="12`) {
 		t.Error("bij een verse uitslag staat de knop niet uit, of zonder wachttijd (data-over)")
 	}
 	if w := opnieuw("192.0.2.1"); w.Code != http.StatusSeeOther || keer.Load() != 1 {
