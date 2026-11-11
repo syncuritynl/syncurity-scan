@@ -416,3 +416,68 @@ func TestInternVolledig(t *testing.T) {
 		t.Errorf("derde tegelijk: %d", w.Code)
 	}
 }
+
+// Opnieuw scannen op verzoek: pas na opnieuwNa, met de mailservers niet uit het
+// geheugen, en een mislukte nieuwe scan laat de vorige uitslag staan.
+func TestOpnieuwScannen(t *testing.T) {
+	var keer atomic.Int32
+	var laatsteOpnieuw atomic.Bool
+	var faal atomic.Bool
+	d := nepDienst(func(_ context.Context, invoer string, in keuring.Instellingen) (*keuring.Uitslag, error) {
+		keer.Add(1)
+		laatsteOpnieuw.Store(in.Opnieuw)
+		if faal.Load() {
+			return nil, fmt.Errorf("stuk")
+		}
+		return nepUitslag(invoer), nil
+	})
+	h := d.routes()
+	opnieuw := func(ip string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/scan", strings.NewReader(url.Values{"domein": {"voorbeeld.nl"}, "opnieuw": {"1"}}.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Sec-Fetch-Site", "same-origin")
+		req.Header.Set("X-Real-IP", ip)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		return w
+	}
+	maakOud := func(leeftijd time.Duration) {
+		d.mu.Lock()
+		b := d.uitslag["voorbeeld.nl"]
+		u := *b.u
+		u.Tijd = time.Now().Add(-leeftijd)
+		b.u = &u
+		d.uitslag["voorbeeld.nl"] = b
+		d.mu.Unlock()
+	}
+
+	if w := postScan(h, "voorbeeld.nl", "192.0.2.1"); w.Code != http.StatusSeeOther || keer.Load() != 1 || laatsteOpnieuw.Load() {
+		t.Fatalf("eerste scan: %d, %d keer, opnieuw %v", w.Code, keer.Load(), laatsteOpnieuw.Load())
+	}
+	if b := get(h, "/scan/voorbeeld.nl").Body.String(); !strings.Contains(b, "Opnieuw scannen kan vanaf") || strings.Contains(b, `name="opnieuw"`) {
+		t.Error("een verse uitslag toont de knop, of zegt niet vanaf wanneer het kan")
+	}
+	if w := opnieuw("192.0.2.1"); w.Code != http.StatusSeeOther || keer.Load() != 1 {
+		t.Errorf("te vroeg opnieuw: %d, %d keer (verwacht geen nieuwe scan)", w.Code, keer.Load())
+	}
+
+	maakOud(opnieuwNa + time.Second)
+	if b := get(h, "/scan/voorbeeld.nl").Body.String(); !strings.Contains(b, `name="opnieuw" value="1"`) || !strings.Contains(b, `name="domein" value="voorbeeld.nl"`) {
+		t.Error("na opnieuwNa staat de knop er niet, of zonder domeinnaam")
+	}
+	if postScan(h, "voorbeeld.nl", "192.0.2.1"); keer.Load() != 1 {
+		t.Errorf("een gewone scan negeert de bewaarde uitslag (%d keer)", keer.Load())
+	}
+	if w := opnieuw("192.0.2.1"); w.Code != http.StatusSeeOther || keer.Load() != 2 || !laatsteOpnieuw.Load() {
+		t.Errorf("opnieuw na opnieuwNa: %d, %d keer, opnieuw %v", w.Code, keer.Load(), laatsteOpnieuw.Load())
+	}
+
+	maakOud(opnieuwNa + time.Second)
+	faal.Store(true)
+	if w := opnieuw("192.0.2.1"); w.Code == http.StatusSeeOther || keer.Load() != 3 {
+		t.Errorf("mislukte nieuwe scan: %d, %d keer", w.Code, keer.Load())
+	}
+	if d.bewaarde("voorbeeld.nl") == nil {
+		t.Error("na een mislukte nieuwe scan is de vorige uitslag weg")
+	}
+}

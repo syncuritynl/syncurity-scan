@@ -42,6 +42,7 @@ var sjablonen = template.Must(template.ParseFS(sjabloonBestanden, "sjablonen/*.h
 
 const (
 	bewaarTijd     = 15 * time.Minute // zo lang geldt een uitslag
+	opnieuwNa      = 2 * time.Minute  // een nieuwe scan op verzoek kan pas zo lang na de vorige
 	perBezoeker    = 8                // scans per venster per adres
 	venster        = 10 * time.Minute
 	tegelijk       = 3 // scans die tegelijk mogen lopen
@@ -130,9 +131,14 @@ func (d *dienst) opruimen() {
 }
 
 func (d *dienst) bewaarde(domein string) *keuring.Uitslag {
+	return d.bewaardeNa(domein, time.Time{})
+}
+
+// bewaardeNa geeft de bewaarde uitslag alleen als die na na gemaakt is.
+func (d *dienst) bewaardeNa(domein string, na time.Time) *keuring.Uitslag {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if b, ok := d.uitslag[domein]; ok && time.Now().Before(b.tot) {
+	if b, ok := d.uitslag[domein]; ok && time.Now().Before(b.tot) && b.u.Tijd.After(na) {
 		return b.u
 	}
 	return nil
@@ -163,8 +169,20 @@ var errTeVaak = errors.New("Je hebt in korte tijd veel scans gestart. Probeer he
 // uitslagVoor levert een uitslag: bewaard als die er is, anders een nieuwe keuring.
 // Twee bezoekers die tegelijk hetzelfde domein vragen, delen één keuring.
 func (d *dienst) uitslagVoor(ctx context.Context, domein, ip string) (*keuring.Uitslag, error) {
+	return d.scan(ctx, domein, ip, false)
+}
+
+// scan is uitslagVoor, met opnieuw: de bezoeker vroeg om een nieuwe scan. Een
+// bewaarde uitslag telt dan alleen als hij jonger is dan opnieuwNa; zo kan
+// niemand hetzelfde domein telkens opnieuw laten scannen. Lukt de nieuwe scan
+// niet, dan blijft de vorige uitslag staan. De rem per bezoeker telt gewoon mee.
+func (d *dienst) scan(ctx context.Context, domein, ip string, opnieuw bool) (*keuring.Uitslag, error) {
+	var na time.Time
+	if opnieuw {
+		na = time.Now().Add(-opnieuwNa)
+	}
 	for {
-		if u := d.bewaarde(domein); u != nil {
+		if u := d.bewaardeNa(domein, na); u != nil {
 			return u, nil
 		}
 		d.mu.Lock()
@@ -173,7 +191,7 @@ func (d *dienst) uitslagVoor(ctx context.Context, domein, ip string) (*keuring.U
 			klaar := make(chan struct{})
 			d.bezig[domein] = klaar
 			d.mu.Unlock()
-			u, err := d.voerUit(ctx, domein, ip)
+			u, err := d.voerUit(ctx, domein, ip, opnieuw)
 			d.mu.Lock()
 			delete(d.bezig, domein)
 			if err == nil {
@@ -186,7 +204,7 @@ func (d *dienst) uitslagVoor(ctx context.Context, domein, ip string) (*keuring.U
 		d.mu.Unlock()
 		select {
 		case <-wacht:
-			if u := d.bewaarde(domein); u != nil {
+			if u := d.bewaardeNa(domein, na); u != nil {
 				return u, nil
 			}
 			return nil, errDruk
@@ -196,7 +214,7 @@ func (d *dienst) uitslagVoor(ctx context.Context, domein, ip string) (*keuring.U
 	}
 }
 
-func (d *dienst) voerUit(ctx context.Context, domein, ip string) (*keuring.Uitslag, error) {
+func (d *dienst) voerUit(ctx context.Context, domein, ip string, opnieuw bool) (*keuring.Uitslag, error) {
 	if !d.magNog(ip) {
 		return nil, errTeVaak
 	}
@@ -213,7 +231,9 @@ func (d *dienst) voerUit(ctx context.Context, domein, ip string) (*keuring.Uitsl
 	case <-ctx.Done():
 		return nil, errDruk
 	}
-	u, err := d.keur(context.WithoutCancel(ctx), domein, d.in)
+	in := d.in
+	in.Opnieuw = opnieuw
+	u, err := d.keur(context.WithoutCancel(ctx), domein, in)
 	if err == nil {
 		// Nooit Detail of Oplossing bewaren of tonen: die zijn alleen voor de
 		// eigenaar, na domeinbewijs via de interne socket. Keur geeft ze al
@@ -236,6 +256,10 @@ type rapportPagina struct {
 	Titel, Beschrijving, Domein, Wanneer, Sub, PDF, Versie string
 	Rest                                                   int
 	U                                                      *keuring.Uitslag
+	// Opnieuw scannen: de knop als de uitslag ouder is dan opnieuwNa,
+	// anders vanaf hoe laat het kan. OpnieuwInvoer gaat mee in het formulier.
+	OpnieuwKan                  bool
+	OpnieuwVanaf, OpnieuwInvoer string
 }
 
 func kopregels(w http.ResponseWriter) {
@@ -337,7 +361,8 @@ func (d *dienst) start(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, stop := context.WithTimeout(r.Context(), 50*time.Second)
 	defer stop()
-	if _, err := d.uitslagVoor(ctx, domein, bezoeker(r)); err != nil {
+	opnieuw := r.PostForm.Get("opnieuw") == "1"
+	if _, err := d.scan(ctx, domein, bezoeker(r), opnieuw); err != nil {
 		status := http.StatusBadGateway
 		switch {
 		case errors.Is(err, errTeVaak):
@@ -426,16 +451,25 @@ func (d *dienst) rapport(w http.ResponseWriter, r *http.Request) {
 	if u.Totaal > 0 {
 		rest = 402 - 402*u.InOrde/u.Totaal
 	}
+	sub := subdomein(r.URL.Query().Get("invoer"), u.Domein)
+	opnieuwInvoer := u.Domein
+	if sub != "" {
+		opnieuwInvoer = sub
+	}
 	toon(w, http.StatusOK, "rapport", rapportPagina{
 		Titel:        "Scan " + keuring.Weergave(u.Domein) + " · Syncurity",
 		Beschrijving: fmt.Sprintf("Scan van %s: %d van de %d punten in orde.", keuring.Weergave(u.Domein), u.InOrde, u.Totaal),
 		Domein:       keuring.Weergave(u.Domein),
 		Wanneer:      wanneer(u.Tijd),
-		Sub:          subdomein(r.URL.Query().Get("invoer"), u.Domein),
+		Sub:          sub,
 		Rest:         rest,
 		U:            u,
 		PDF:          pdfAdres(u.Domein, r.URL.Query().Get("invoer")),
 		Versie:       openbareVersie(),
+
+		OpnieuwKan:    time.Since(u.Tijd) >= opnieuwNa,
+		OpnieuwVanaf:  u.Tijd.Add(opnieuwNa).In(amsterdam).Format("15:04"),
+		OpnieuwInvoer: opnieuwInvoer,
 	})
 }
 

@@ -361,7 +361,9 @@ func (k *keurder) mailTLS(ctx context.Context) ([]mxMeting, error) {
 	klaar := make([]chan struct{}, len(namen))
 	for i, n := range namen {
 		klaar[i] = make(chan struct{})
-		if m, ok := uitGeheugen(n, time.Now()); ok {
+		// Bij een nieuwe scan op verzoek meten we opnieuw: misschien is juist
+		// de mailserver aangepast. De nieuwe meting gaat wel in het geheugen.
+		if m, ok := uitGeheugen(n, time.Now()); ok && !k.opnieuw {
 			uit[i] = m
 			close(klaar[i])
 			continue

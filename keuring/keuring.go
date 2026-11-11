@@ -19,6 +19,9 @@ type Instellingen struct {
 	UserAgent string
 	Lijsten   *Lijsten // RPKI en HSTS-preload van schijf; nil: die punten zijn niet te meten
 	EHLO      string   // de naam bij EHLO voor de STARTTLS-meting; leeg: geen verbinding met mailservers
+	// Opnieuw: de bezoeker vroeg om een nieuwe scan, omdat hij iets aanpaste. De
+	// meting van de mailservers komt dan niet uit het geheugen (mxGeheugen).
+	Opnieuw bool
 }
 
 // Standaard is wat de dienst gebruikt als er niets anders is opgegeven.
@@ -44,6 +47,7 @@ type keurder struct {
 	ehlo     string
 	smtpDial smtpDialer // poort 25 van de mailservers (Kiezer.DialSMTP)
 	vol      bool       // volledige keuring: een paar extra metingen voor de details
+	opnieuw  bool       // nieuwe scan op verzoek: mailservers niet uit het geheugen
 
 	w     *web // wat we van de website haalden, voor de voorstellen
 	mu    sync.Mutex
@@ -144,6 +148,7 @@ func keur(ctx context.Context, domein string, r *Resolver, in Instellingen, vol 
 		lijsten: in.Lijsten,
 		ehlo:    in.EHLO,
 		vol:     vol,
+		opnieuw: in.Opnieuw,
 	}
 
 	k.smtpDial = kiezer.DialSMTP

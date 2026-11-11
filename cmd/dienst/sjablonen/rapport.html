@@ -17,6 +17,8 @@
     </div>
     {{if .Sub}}<p class="bewaar">Je vulde {{.Sub}} in. De scan gaat over de hele domeinnaam {{.Domein}}.</p>{{end}}
     <p class="bewaar">Deze uitslag blijft 15 minuten op dit adres staan. Bewaar hem als pdf met de knop bovenaan.</p>
+    {{if .OpnieuwKan}}<form class="scan-weer" method="post" action="/scan"><input type="hidden" name="domein" value="{{.OpnieuwInvoer}}"><input type="hidden" name="opnieuw" value="1"><span>Iets aangepast?</span> <button class="knop-rand" type="submit">Scan opnieuw</button></form>
+    {{else}}<p class="bewaar">Iets aangepast? Opnieuw scannen kan vanaf {{.OpnieuwVanaf}} uur.</p>{{end}}
     {{if .U.Melding}}<p class="melding-scan" role="status">{{.U.Melding}}</p>{{end}}
     {{if .U.Feiten}}
     <dl class="feiten" aria-label="Wat we over je domein zagen">
